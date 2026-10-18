@@ -14,4 +14,6 @@ agents:
   - {name: uct_c2.0,   type: mcts, base: MCTS_HEURISTIC, params: {c_uct: 2.0}}
   - {name: random_rollout, type: mcts, base: MCTS_RANDOM, params: {}}
   - {name: rave,       type: mcts, base: MCTS_RAVE, params: {}}
+  - {name: heuristic_tac, type: mcts, base: MCTS_HEURISTIC_TAC, params: {}}
+  - {name: rave_tac,   type: mcts, base: MCTS_RAVE_TAC, params: {}}
   - {name: no_reuse,   type: mcts, base: MCTS_HEURISTIC, params: {reuse_tree: false}}

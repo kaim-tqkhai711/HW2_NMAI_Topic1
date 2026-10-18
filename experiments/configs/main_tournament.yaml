@@ -19,6 +19,10 @@ agents:
   - mcts_rave
   - mcts_eval
   - mcts_ab
+  - mcts_heuristic_tac
+  - mcts_rave_tac
+  - mcts_eval_tac
+  - mcts_ab_tac
 puzzles:
   budget: 0.5                   # seconds per puzzle position
 quick:

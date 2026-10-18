@@ -31,8 +31,13 @@ MCTS_RANDOM = MCTSConfig(rollout="random")
 MCTS_HEURISTIC = MCTSConfig(rollout="heuristic")
 MCTS_RAVE = MCTSConfig(rollout="heuristic", rave=True)
 
+MCTS_HEURISTIC_TAC = replace(MCTS_HEURISTIC, tactical_root_check=True)
+MCTS_RAVE_TAC = replace(MCTS_RAVE, tactical_root_check=True)
+
 MCTS_EVAL = HybridConfig(leaf="eval")
 MCTS_AB = HybridConfig(leaf="ab")
+MCTS_EVAL_TAC = replace(MCTS_EVAL, tactical_root_check=True)
+MCTS_AB_TAC = replace(MCTS_AB, tactical_root_check=True)
 
 HYBRID_PRESETS: dict[str, HybridConfig] = {"MCTS_EVAL": MCTS_EVAL, "MCTS_AB": MCTS_AB}
 
@@ -40,6 +45,16 @@ MCTS_PRESETS: dict[str, MCTSConfig] = {
     "MCTS_RANDOM": MCTS_RANDOM,
     "MCTS_HEURISTIC": MCTS_HEURISTIC,
     "MCTS_RAVE": MCTS_RAVE,
+}
+
+# Same algorithms plus the root tactical check (separate dicts keep the originals unchanged).
+MCTS_TAC_PRESETS: dict[str, MCTSConfig] = {
+    "MCTS_HEURISTIC_TAC": MCTS_HEURISTIC_TAC,
+    "MCTS_RAVE_TAC": MCTS_RAVE_TAC,
+}
+HYBRID_TAC_PRESETS: dict[str, HybridConfig] = {
+    "MCTS_EVAL_TAC": MCTS_EVAL_TAC,
+    "MCTS_AB_TAC": MCTS_AB_TAC,
 }
 
 # Depth cap for time-limited play: iterative deepening stops on the clock first.
@@ -64,5 +79,7 @@ AGENT_REGISTRY: dict[str, Callable[[int], Agent]] = {
     **{name.lower(): _ab_factory(cfg) for name, cfg in AB_PRESETS.items()},
     **{name.lower(): _mcts_factory(cfg) for name, cfg in MCTS_PRESETS.items()},
     **{name.lower(): _hybrid_factory(cfg) for name, cfg in HYBRID_PRESETS.items()},
+    **{name.lower(): _mcts_factory(cfg) for name, cfg in MCTS_TAC_PRESETS.items()},
+    **{name.lower(): _hybrid_factory(cfg) for name, cfg in HYBRID_TAC_PRESETS.items()},
     "ab_full_timed": _ab_factory(replace(AB_FULL, max_depth=_TIMED_DEPTH)),
 }

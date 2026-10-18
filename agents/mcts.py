@@ -46,6 +46,10 @@ class MCTSConfig:
         reuse_tree: Keep the subtree below the opponent's reply between calls.
         max_iterations: Hard cap on simulations per call (for deterministic tests).
         seed: Seed of the agent's random generator.
+        tactical_root_check: At the root only: play an immediate win if the side
+            to move has one; otherwise, if the opponent has immediate winning
+            moves, expand only the moves that block them. Uses the same
+            `WindowTracker` threat detection as the alpha-beta agent.
     """
 
     c_uct: float = 1.414
@@ -57,6 +61,7 @@ class MCTSConfig:
     reuse_tree: bool = True
     max_iterations: int | None = None
     seed: int = 0
+    tactical_root_check: bool = False
 
 
 class Node:
@@ -179,9 +184,20 @@ class MCTSAgent(Agent):
         t0 = perf_counter()
         deadline = t0 + time_budget_s
         self._root_n = board.n
-        root = self._reuse_root(board)
+        forced: list[int] | None = None
+        immediate: int | None = None
+        if cfg.tactical_root_check:
+            tracker = WindowTracker(board.copy())
+            wins = tracker.winning_cells(board.to_move)
+            if wins:
+                immediate = wins[0]
+            else:
+                forced = tracker.winning_cells(-board.to_move) or None
+        root = None if (forced or immediate is not None) else self._reuse_root(board)
         if root is None:
             root = Node(-1, None, -board.to_move, False)
+            if forced:
+                root.untried = list(forced)
         self._root = root
         self._root_hist = board.move_history
         self._root_board = board.copy()
@@ -191,6 +207,11 @@ class MCTSAgent(Agent):
         self._win = WindowTracker(self._sb) if cfg.rollout == "heuristic" else None
         self._max_depth = 0
         sims = 0
+        if immediate is not None:
+            self._stats = SearchStats(nodes=0, time_s=perf_counter() - t0, depth_reached=0,
+                                      extra={"sims_per_s": 0.0, "max_tree_depth": 0.0,
+                                             "tactical": 1.0})
+            return immediate
         if len(legal) > 1:
             while True:
                 if cfg.max_iterations is not None and sims >= cfg.max_iterations:
@@ -199,7 +220,7 @@ class MCTSAgent(Agent):
                     break
                 self._simulate(root)
                 sims += 1
-        best = self._most_visited(root, legal)
+        best = self._most_visited(root, forced or legal)
         elapsed = perf_counter() - t0
         self._stats = SearchStats(
             nodes=sims,
@@ -208,6 +229,7 @@ class MCTSAgent(Agent):
             extra={
                 "sims_per_s": sims / elapsed if elapsed > 0 else 0.0,
                 "max_tree_depth": float(self._max_depth),
+                "tactical": 1.0 if forced else 0.0,
             },
         )
         return best

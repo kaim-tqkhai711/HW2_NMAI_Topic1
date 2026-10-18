@@ -20,3 +20,7 @@ agents:
   - mcts_rave
   - mcts_eval
   - mcts_ab
+  - mcts_heuristic_tac
+  - mcts_rave_tac
+  - mcts_eval_tac
+  - mcts_ab_tac

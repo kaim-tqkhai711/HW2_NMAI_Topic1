@@ -53,10 +53,13 @@ def test_quick_mode_shrinks_the_run() -> None:
 
 def test_estimate_is_positive_and_scales_with_games() -> None:
     cfg = load_config(CONFIGS / "main_tournament.yaml")
+    a = len(cfg["agents"])
+    pairs = a * (a - 1) // 2
     games, secs = estimate(cfg, 4)
-    assert games == 66 * 100 * 2 * 3 and secs > 0
+    assert games == pairs * 100 * 2 * 3 and secs > 0
     g2, s2 = estimate(apply_quick(cfg), 4)
-    assert g2 == 66 * 4 and s2 < secs
+    assert g2 == pairs * 4 and s2 < secs
+    assert {"mcts_heuristic_tac", "mcts_rave_tac"} <= set(cfg["agents"])
 
 
 def test_config_factory_builds_picklable_variants() -> None:

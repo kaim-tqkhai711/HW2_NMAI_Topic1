@@ -33,7 +33,13 @@ from agents.backtracking import BacktrackingAgent
 from agents.base import Agent
 from agents.hybrid import HybridMCTSAgent
 from agents.mcts import MCTSAgent
-from agents.presets import AB_PRESETS, HYBRID_PRESETS, MCTS_PRESETS
+from agents.presets import (
+    AB_PRESETS,
+    HYBRID_PRESETS,
+    HYBRID_TAC_PRESETS,
+    MCTS_PRESETS,
+    MCTS_TAC_PRESETS,
+)
 from core.board import Board
 from core.rules import GameConfig
 from eval.elo import bootstrap_elo, games_from_records
@@ -65,9 +71,10 @@ class ConfigFactory:
 
     def __call__(self, seed: int) -> Agent:
         if self.kind == "mcts":
-            return MCTSAgent(replace(MCTS_PRESETS[self.base], seed=seed, **self.params))
+            return MCTSAgent(replace({**MCTS_PRESETS, **MCTS_TAC_PRESETS}[self.base], seed=seed, **self.params))
         if self.kind == "hybrid":
-            return HybridMCTSAgent(replace(HYBRID_PRESETS[self.base], seed=seed, **self.params))
+            return HybridMCTSAgent(
+                replace({**HYBRID_PRESETS, **HYBRID_TAC_PRESETS}[self.base], seed=seed, **self.params))
         if self.kind == "ab":
             return AlphaBetaAgent(replace(AB_PRESETS[self.base], **self.params), seed=seed)
         raise ValueError(f"unknown agent type {self.kind!r}")
