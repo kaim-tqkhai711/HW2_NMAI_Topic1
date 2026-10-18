@@ -320,8 +320,14 @@ class Board:
         """Outcome from X's view: +1 X won, -1 O won, 0 draw or unfinished."""
         return self.winner
 
-    def copy(self) -> Board:
-        """Independent copy (for GUI/tournament use, not for search)."""
+    def copy(self, track_candidates: bool = False) -> Board:
+        """Independent copy (for GUI/tournament use, not for search).
+
+        Args:
+            track_candidates: If True, the copy inherits this board's candidate
+                counters. By default it carries none, so make/unmake on the copy
+                does no counter work (they are rebuilt lazily on demand).
+        """
         b = Board.__new__(Board)
         b.config, b.n, b._size = self.config, self.n, self._size
         b.cells = self.cells.copy()
@@ -333,7 +339,10 @@ class Board:
         b._eidx = self._eidx[:]
         b._count = self._count[:]
         b._zob = self._zob
-        b._trackers = {r: t.copy() for r, t in self._trackers.items()}
+        if track_candidates:
+            b._trackers = {r: t.copy() for r, t in self._trackers.items()}
+        else:
+            b._trackers = {}
         b._tracker_list = list(b._trackers.values())
         return b
 

@@ -296,3 +296,47 @@ def test_from_string_detects_existing_win() -> None:
 def test_from_string_rejects_bad_input(text: str, to_move: int) -> None:
     with pytest.raises(ValueError):
         Board.from_string(text, GameConfig(3, 3), to_move)
+
+
+def _brute_candidates(b: Board, radius: int) -> set[int]:
+    n = b.n
+    stones = [m for m in range(n * n) if b.cells_list[m] != 0]
+    return {
+        m
+        for m in range(n * n)
+        if b.cells_list[m] == 0
+        and any(
+            max(abs(m // n - s // n), abs(m % n - s % n)) <= radius for s in stones
+        )
+    }
+
+
+def test_default_copy_carries_no_candidate_counters() -> None:
+    b = Board(CFG)
+    b.make(12)
+    b.candidate_moves(1)
+    b.candidate_moves(2)
+    c = b.copy()
+    assert c._trackers == {} and c._tracker_list == []
+    c.make(13)
+    c.make(7)
+    c.unmake_move()
+    c.unmake_move()
+    assert c._trackers == {} and c._tracker_list == []
+    assert c.hash == b.hash and list(c.empty_cells) == list(b.empty_cells)
+    assert set(c.candidate_moves(1)) == _brute_candidates(c, 1)
+    assert len(b._tracker_list) == 2
+
+
+def test_tracked_copy_keeps_correct_counters() -> None:
+    b = Board(CFG)
+    b.make(12)
+    b.candidate_moves(2)
+    b.make(6)
+    c = b.copy(track_candidates=True)
+    assert len(c._tracker_list) == 1
+    c.make(18)
+    assert set(c.candidate_moves(2)) == _brute_candidates(c, 2)
+    assert set(b.candidate_moves(2)) == _brute_candidates(b, 2)
+    c.unmake_move()
+    assert set(c.candidate_moves(2)) == _brute_candidates(c, 2)
