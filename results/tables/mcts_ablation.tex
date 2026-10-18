@@ -1,0 +1,19 @@
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+rank & variant & Elo & 95\\% CI & score & games \\
+\midrule
+1 & rave & 1014 & [872, 1290] & 0.86 & 28 \\
+2 & no\_reuse & 779 & [666, 944] & 0.57 & 28 \\
+3 & uct\_c1.0 & 779 & [633, 938] & 0.57 & 28 \\
+4 & uct\_c0.5 & 753 & [638, 936] & 0.54 & 28 \\
+5 & random\_rollout & 728 & [597, 881] & 0.50 & 28 \\
+6 & uct\_c2.0 & 728 & [612, 880] & 0.50 & 28 \\
+7 & uct\_c1.414 & 702 & [586, 857] & 0.46 & 28 \\
+8 & random & 0 & [0, 0] & 0.00 & 28 \\
+\bottomrule
+\end{tabular}
+\caption{MCTS ablation (Elo against Random = 0).}
+\label{tab:mcts-ablation}
+\end{table}

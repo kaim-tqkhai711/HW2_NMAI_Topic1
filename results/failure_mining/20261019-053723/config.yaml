@@ -1,0 +1,15 @@
+name: failure_mining
+seed: 20260306
+boards:
+- - 7
+  - 4
+budget_mode: time
+budgets:
+- 0.1
+games_per_pair: 40
+anchor: random
+agents:
+- mcts_random
+- mcts_heuristic
+- ab_order_id_tt
+- ab_full_timed

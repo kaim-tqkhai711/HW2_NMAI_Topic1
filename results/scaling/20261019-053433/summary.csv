@@ -1,0 +1,5 @@
+n,k,budget_mode,budget,agent,games,wins,draws,losses,score,score_lo,score_hi,elo,elo_lo,elo_hi,violations,mean_nodes_per_s
+7,4,time,0.5,ab_full_timed,12,10,0,2,0.8333,0.552,0.953,916.3,713.2,1600.3,1,6999.7
+7,4,time,0.5,mcts_ab,12,6,0,6,0.5,0.2538,0.7462,666.9,460.8,987.5,5,738.7
+7,4,time,0.5,mcts_rave,12,8,0,4,0.6667,0.3906,0.8619,790.9,591.6,1187.1,1,4103.4
+7,4,time,0.5,random,12,0,0,12,0.0,0.0,0.2425,0.0,0.0,0.0,3,0.0

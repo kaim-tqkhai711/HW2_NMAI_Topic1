@@ -13,8 +13,8 @@ commands/time estimates for the full experiment runs.
 | P4 MCTS | done | see "block test budget" below |
 | P5 hybrids | MCTS_EVAL, MCTS_AB done | MCTS_SOLVER and threat-space search **not built** (see below) |
 | P6 eval harness | done | |
-| P7 experiments | see bottom | |
-| P8 GUI | see bottom | |
+| P7 experiments | done | all configs ran with `--quick`; full runs NOT executed |
+| P8 GUI | done | headless-tested; visual checks listed below |
 
 ## Deviations and decisions worth knowing about
 
@@ -90,3 +90,48 @@ commands/time estimates for the full experiment runs.
 
 None needed so far. `Board.copy(track_candidates=...)`, `WindowTracker` (public) and
 `Node.proven` are the only additions outside their own milestone's files.
+
+## P7: experiments
+
+Run: `python -m experiments.run --config experiments/configs/<name>.yaml [--quick] [--dry-run]`,
+then `python -m experiments.plots`, `python -m experiments.tables`,
+`python -m experiments.failure_cases`.
+
+Full-run estimates (printed by the runner; rough, 10 workers = 22 logical cores // 2 - 1):
+
+| config | games | est. wall time |
+|---|---|---|
+| main_tournament | 39,600 | ~15 h |
+| nodes_budget | 26,400 | ~38 h (estimate is pessimistic: the quick run took ~1 min vs 6.6 predicted) |
+| ablation_ab | 840 | ~19 min (+ depth table: AB_PLAIN depth 4 takes ~1 min per position) |
+| ablation_mcts | 1,120 | ~26 min |
+| scaling | 720 | ~14 min |
+| failure_mining (extra) | 240 | ~1 min (already run once, not quick) |
+
+* `--quick` = 4 games per pair, first budget, first board, plus per-config `quick:` overrides.
+* Extra config `failure_mining.yaml` (not in the spec) supplies games for the failure miner.
+* Failure cases (`results/failure_cases.md`): 3 MCTS-missed-forced-win examples, but only 1 alpha-beta
+  example in the quick data; the full tournament should supply the rest.
+* The quick-run data are tiny (4 games per pair): the figures prove the pipeline, not conclusions.
+* `experiments/` imports `tests/positions.py` for the fixed midgame positions.
+* mypy is clean on `gui/`, `eval/`, `experiments/` except missing PyYAML stubs; strict mode is only configured for core/agents.
+* Installed with pip for this milestone: matplotlib 3.10.9, pygame 2.6.1 (see requirements.txt).
+
+Findings visible already: heuristic MCTS is *worse* than random-rollout MCTS on win-in-1 puzzles
+at short budgets (many strong moves share value 1.0, so visit counts do not single out the win);
+`ab_plain` (non-iterative, depth 4) collapses to the fallback move under a 0.1 s budget.
+
+## P8: GUI
+
+Run: `python -m gui.app [--load saved.json]`; headless smoke test: `python -m gui.app --headless-check`.
+Logic is in `gui/controller.py` (tested without pygame); saves are one-line `GameRecord` JSON in
+`results/gui_saves/`, screenshots in `results/gui_screenshots/`.
+
+Visual checks for a human (not automatable here):
+1. 11x11 board is legible at the default 1000x760 window and after resizing (stones, grid, panel text).
+2. AI thinking indicator appears and the window stays responsive; Cancel/Undo during thinking.
+3. Winning-line highlight, last-move ring, and the move-number toggle (M).
+4. MCTS visit/value overlay and the AB-score overlay (O cycles) are readable over stones.
+5. AI-vs-AI Step / Auto / Speed buttons behave; Save then Load restores the position.
+6. Setup slider drag and agent < > selectors with a mouse.
+Sample screenshots: `results/gui_screenshots/demo_*.png`.

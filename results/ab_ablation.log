@@ -1,0 +1,15 @@
+AB_PLAIN        pos0 nodes= 1938677 t= 57.68s cut=60924 score=-100 move=48
+AB_PLAIN        pos1 nodes=  956136 t= 29.81s cut=31956 score=183 move=24
+AB_PLAIN        pos2 nodes=  299583 t=  8.61s cut=24721 score=11204 move=21
+AB_ORDER        pos0 nodes=   16340 t=  1.44s cut=5379 score=-100 move=48
+AB_ORDER        pos1 nodes=   19958 t=  1.59s cut=5170 score=183 move=24
+AB_ORDER        pos2 nodes=   14402 t=  1.47s cut=4952 score=11204 move=21
+AB_ORDER_ID     pos0 nodes=   21810 t=  1.60s cut=5588 score=-100 move=48
+AB_ORDER_ID     pos1 nodes=   25634 t=  1.81s cut=5446 score=183 move=24
+AB_ORDER_ID     pos2 nodes=   19574 t=  1.51s cut=5155 score=11204 move=21
+AB_ORDER_ID_TT  pos0 nodes=   19182 t=  1.14s cut=3304 score=-100 move=48
+AB_ORDER_ID_TT  pos1 nodes=   19418 t=  1.36s cut=4004 score=183 move=24
+AB_ORDER_ID_TT  pos2 nodes=   18276 t=  1.29s cut=3857 score=11204 move=21
+AB_FULL         pos0 nodes=    8371 t=  0.65s cut=1411 score=-100 move=48
+AB_FULL         pos1 nodes=    8948 t=  0.58s cut=1691 score=183 move=24
+AB_FULL         pos2 nodes=   11064 t=  0.79s cut=2138 score=11204 move=21

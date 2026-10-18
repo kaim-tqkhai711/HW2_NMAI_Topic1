@@ -1,0 +1,25 @@
+name: main_tournament
+seed: 20260301
+boards:
+- - 7
+  - 4
+budget_mode: time
+budgets:
+- 0.1
+games_per_pair: 4
+anchor: random
+agents:
+- random
+- backtracking_d2
+- ab_plain
+- ab_order
+- ab_order_id_tt
+- ab_full
+- ab_full_timed
+- mcts_random
+- mcts_heuristic
+- mcts_rave
+- mcts_eval
+- mcts_ab
+puzzles:
+  budget: 0.1

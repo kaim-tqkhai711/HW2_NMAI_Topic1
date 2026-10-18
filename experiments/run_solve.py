@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
@@ -45,7 +46,7 @@ class _Timeout(Exception):
 
 def _symmetry_perms(n: int) -> list[list[int]]:
     """The 8 dihedral symmetries of an n x n board as cell permutations."""
-    maps = [
+    maps: list[Callable[[int, int], tuple[int, int]]] = [
         lambda r, c: (r, c),
         lambda r, c: (c, n - 1 - r),
         lambda r, c: (n - 1 - r, n - 1 - c),

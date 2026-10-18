@@ -1,0 +1,15 @@
+name: scaling
+seed: 20260304
+boards:
+- - 7
+  - 4
+budget_mode: time
+budgets:
+- 0.5
+games_per_pair: 4
+anchor: random
+agents:
+- random
+- ab_full_timed
+- mcts_rave
+- mcts_ab

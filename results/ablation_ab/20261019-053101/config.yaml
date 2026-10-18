@@ -1,0 +1,35 @@
+name: ablation_ab
+seed: 20260302
+boards:
+- - 9
+  - 5
+budget_mode: time
+budgets:
+- 0.5
+games_per_pair: 4
+anchor: random
+agents:
+- random
+- ab_plain
+- ab_order
+- ab_order_id
+- ab_order_id_tt
+- ab_full
+- ab_full_timed
+depth_table:
+  depth: 3
+depth_scaling:
+  n: 7
+  k: 4
+  depths:
+  - 1
+  - 2
+  - 3
+  - 4
+  cap_s: 10
+  agents:
+  - backtracking
+  - ab_plain
+  - ab_order
+  - ab_order_id_tt
+  - ab_full

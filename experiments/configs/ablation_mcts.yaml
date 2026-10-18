@@ -1,0 +1,17 @@
+# MCTS ablation: exploration constant, rollout type and RAVE, on a fixed board.
+name: ablation_mcts
+seed: 20260303
+boards: [[9, 5]]
+budget_mode: time
+budgets: [0.5]
+games_per_pair: 40
+anchor: random
+agents:
+  - random
+  - {name: uct_c0.5,   type: mcts, base: MCTS_HEURISTIC, params: {c_uct: 0.5}}
+  - {name: uct_c1.0,   type: mcts, base: MCTS_HEURISTIC, params: {c_uct: 1.0}}
+  - {name: uct_c1.414, type: mcts, base: MCTS_HEURISTIC, params: {c_uct: 1.414}}
+  - {name: uct_c2.0,   type: mcts, base: MCTS_HEURISTIC, params: {c_uct: 2.0}}
+  - {name: random_rollout, type: mcts, base: MCTS_RANDOM, params: {}}
+  - {name: rave,       type: mcts, base: MCTS_RAVE, params: {}}
+  - {name: no_reuse,   type: mcts, base: MCTS_HEURISTIC, params: {reuse_tree: false}}

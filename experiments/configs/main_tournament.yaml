@@ -1,0 +1,25 @@
+# Main comparison: every agent against every other, time-controlled.
+name: main_tournament
+seed: 20260301
+boards: [[7, 4], [9, 5]]
+budget_mode: time
+budgets: [0.1, 0.5, 1.0]        # seconds per move
+games_per_pair: 100
+anchor: random
+agents:
+  - random
+  - backtracking_d2
+  - ab_plain
+  - ab_order
+  - ab_order_id_tt
+  - ab_full
+  - ab_full_timed
+  - mcts_random
+  - mcts_heuristic
+  - mcts_rave
+  - mcts_eval
+  - mcts_ab
+puzzles:
+  budget: 0.5                   # seconds per puzzle position
+quick:
+  puzzles: {budget: 0.1}

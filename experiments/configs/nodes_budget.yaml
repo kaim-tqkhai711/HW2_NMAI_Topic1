@@ -1,0 +1,22 @@
+# The main comparison repeated with a fixed number of nodes / simulations per move,
+# to check that conclusions do not depend on machine-load noise.
+name: nodes_budget
+seed: 20260305
+boards: [[7, 4], [9, 5]]
+budget_mode: nodes
+budgets: [2000, 10000]          # nodes (alpha-beta) or simulations (MCTS) per move
+games_per_pair: 100
+anchor: random
+agents:
+  - random
+  - backtracking_d2
+  - ab_plain
+  - ab_order
+  - ab_order_id_tt
+  - ab_full
+  - ab_full_timed
+  - mcts_random
+  - mcts_heuristic
+  - mcts_rave
+  - mcts_eval
+  - mcts_ab

@@ -1,0 +1,15 @@
+# Extra games between the agents most likely to show the two failure types that
+# experiments.failure_cases looks for (MCTS missing a forced win, alpha-beta
+# losing from a position it rated winning). Small and cheap; used as a data source.
+name: failure_mining
+seed: 20260306
+boards: [[7, 4]]
+budget_mode: time
+budgets: [0.1]
+games_per_pair: 40
+anchor: random
+agents:
+  - mcts_random
+  - mcts_heuristic
+  - ab_order_id_tt
+  - ab_full_timed

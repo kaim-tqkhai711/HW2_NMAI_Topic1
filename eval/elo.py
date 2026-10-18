@@ -98,5 +98,5 @@ def bootstrap_elo(
 
 def expected_score(rating_a: float, rating_b: float) -> float:
     """Model probability-equivalent score of a against b."""
-    return 1.0 / (1.0 + 10.0 ** ((rating_b - rating_a) / 400.0))
+    return float(1.0 / (1.0 + 10.0 ** ((rating_b - rating_a) / 400.0)))
 

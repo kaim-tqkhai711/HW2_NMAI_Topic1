@@ -7,6 +7,7 @@ method; use `RegistryFactory` for entries of ``AGENT_REGISTRY``.
 """
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import zlib
@@ -309,9 +310,8 @@ def _run_task(task: _Task) -> GameRecord:
 def max_workers() -> int:
     """Physical cores minus one (at least 1); estimated from logical cores without psutil."""
     try:
-        import psutil
-
-        cores = psutil.cpu_count(logical=False) or (os.cpu_count() or 2) // 2
+        psutil = importlib.import_module("psutil")
+        cores = int(psutil.cpu_count(logical=False) or (os.cpu_count() or 2) // 2)
     except ImportError:
         cores = (os.cpu_count() or 2) // 2
     return max(1, cores - 1)

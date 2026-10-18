@@ -1,0 +1,23 @@
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+agent & win in 1 & block & win in 3 & all \\
+\midrule
+random & 0.00 & 0.00 & 0.00 & 0.00 \\
+backtracking\_d2 & 1.00 & 1.00 & 0.00 & 0.67 \\
+ab\_plain & 0.00 & 0.00 & 0.00 & 0.00 \\
+ab\_order & 1.00 & 1.00 & 0.80 & 0.93 \\
+ab\_order\_id\_tt & 1.00 & 1.00 & 1.00 & 1.00 \\
+ab\_full & 1.00 & 1.00 & 1.00 & 1.00 \\
+ab\_full\_timed & 1.00 & 1.00 & 1.00 & 1.00 \\
+mcts\_random & 1.00 & 0.30 & 0.50 & 0.60 \\
+mcts\_heuristic & 0.40 & 0.20 & 0.40 & 0.33 \\
+mcts\_rave & 0.90 & 0.10 & 1.00 & 0.67 \\
+mcts\_eval & 1.00 & 0.50 & 1.00 & 0.83 \\
+mcts\_ab & 1.00 & 0.40 & 1.00 & 0.80 \\
+\bottomrule
+\end{tabular}
+\caption{Puzzle accuracy (30 positions).}
+\label{tab:puzzles}
+\end{table}
