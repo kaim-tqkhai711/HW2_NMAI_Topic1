@@ -1,5 +1,8 @@
 # The main comparison repeated with a fixed number of nodes / simulations per move,
 # to check that conclusions do not depend on machine-load noise.
+# mcts_ab / mcts_ab_tac are left out on purpose: one "simulation" of an AB-leaf hybrid
+# is a whole depth-2 alpha-beta search (~100-200 sims/s), so a node budget is neither
+# comparable nor affordable for them (10,000 sims ~ 50 s per move; 80 h -> 17 h without).
 name: nodes_budget
 seed: 20260305
 boards: [[7, 4], [9, 5]]
@@ -19,8 +22,6 @@ agents:
   - mcts_heuristic
   - mcts_rave
   - mcts_eval
-  - mcts_ab
   - mcts_heuristic_tac
   - mcts_rave_tac
   - mcts_eval_tac
-  - mcts_ab_tac

@@ -1,0 +1,31 @@
+# Pilot for runtime estimation: main_tournament roster, 0.5 s only, 10 games per pair.
+name: pilot_main
+seed: 20260399
+boards:
+- - 7
+  - 4
+- - 9
+  - 5
+budget_mode: time
+budgets:
+- 0.5
+games_per_pair: 10
+anchor: random
+agents:
+- random
+- backtracking_d2
+- ab_plain
+- ab_order
+- ab_order_id_tt
+- ab_full
+- ab_full_timed
+- mcts_random
+- mcts_heuristic
+- mcts_rave
+- mcts_eval
+- mcts_ab
+- mcts_heuristic_tac
+- mcts_rave_tac
+- mcts_eval_tac
+- mcts_ab_tac
+

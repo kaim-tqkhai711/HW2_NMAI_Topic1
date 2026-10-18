@@ -86,6 +86,79 @@ commands/time estimates for the full experiment runs.
 * Elo adds 0.1 virtual drawn games per agent pair so the MLE stays finite for an
   unbeaten agent.
 
+## Follow-ups after P8
+
+### Tactical root check (TAC variants)
+`MCTSConfig.tactical_root_check` (default False). At the root only: an immediate win is
+returned without search (stats: nodes=0, `extra["tactical"]=1`); otherwise, if the opponent
+has immediate wins, the root expands only the blocking moves. Threat detection is
+`WindowTracker.winning_cells` from `agents/alphabeta.py` (not duplicated). Presets in separate
+dicts (`MCTS_TAC_PRESETS`, `HYBRID_TAC_PRESETS`) so the original variants and their
+parametrised tests are untouched: `mcts_heuristic_tac`, `mcts_rave_tac`, `mcts_eval_tac`,
+`mcts_ab_tac`. Hybrids had no equivalent root check, hence their TAC versions. Test: block found
+in 20/20 seeds at <= 500 simulations on 7x7 and 9x9 (5 seeds for `mcts_ab_tac`, whose
+simulations are ~50x slower). The existing 3,000/8,000-simulation tests are unchanged.
+Added to `main_tournament`, `nodes_budget` (for symmetry with main) and `ablation_mcts`.
+
+### Solver reporting
+`results/solve.csv` columns: `n,k,variant,early_stop,value,nodes,time_s,solved`. Full minimax
+(`early_stop=0`) is tried first for every (variant, board); if it does not finish in the cap
+(120 s no-memo / plain memo, 600 s memo+symmetry) the early-stop run is added as a second row.
+Result: (3,3) all three variants solve without early stop (no memo: exactly 549,946 nodes, the
+known tree size). (4,3): without early stop only memo+symmetry finishes (29 s); no memo and plain
+memo finish only with early stop (79 s / 7.6 s). (4,4): only memo+symmetry finishes (61 s without
+early stop; value draw). (5,4): memo+symmetry with early stop, not solved in 600 s.
+The 7x7 node-explosion experiment was confirmed to be plain minimax: `BacktrackingAgent` has no
+memo, symmetry or cutoff, and every completed depth in `backtracking_growth.csv` equals the closed
+form 1 + sum_i prod(N^2 - j) exactly (checked in a test). Not rerun.
+
+### Chunked, resumable runs and the pilot
+Runner additions: `--only NxK@budget ...`, `--run-dir`, `--part i/m` (interleaved opening
+slices), `--extras`; the summary is rebuilt from the whole `games.jsonl` after every
+invocation, so chunks can finish in any order and an interrupted chunk is resumed by re-running
+its command. `round_robin(opening_part=(i, m))` does the splitting (game ids unchanged).
+
+Pilot (`experiments/configs/pilot_main.yaml`; 16 agents, 7x7 and 9x9, 0.5 s, 10 games per pair =
+2,400 games, 10 workers): **15.3 min**, parallel efficiency 0.98, mean game length only
+8.5 plies (7x7) / 16.0 plies (9x9) (X wins 66% / 54%). This is ~3x faster than the runner's
+rough estimate (which assumed 3.5N plies), so the estimates in the P7 section above are
+superseded by `results/runtime_estimate.md` (`python -m experiments.estimate_runtime`):
+
+| config | est. hours |
+|---|---|
+| ablation_ab (incl. depth tables) | 0.24 |
+| ablation_mcts | 0.31 |
+| scaling | 0.11 |
+| main_tournament | 8.4 |
+| failure_mining | < 0.1 |
+| nodes_budget (after dropping the AB-leaf hybrids) | 16.6 |
+| **total** | **25.7** |
+
+Model: per-agent seconds/move and nodes/s measured in the pilot, scaled with the budget for
+budget-bound agents, plies per game from the pilot (11x11 scaled from 9x9), efficiency from the
+pilot; it reproduces the pilot's own time within 10% (in-sample check only).
+Estimates are for an otherwise idle machine; they exclude the AB-leaf overshoot fix below.
+
+Run order (each chunk <= 6 h, all idempotent/resumable; commands in `results/runtime_estimate.md`):
+1. ablation_ab (0.2 h) 2. ablation_mcts (0.3 h) 3. scaling (0.1 h) 4. main_tournament chunk A: all
+7x7 cells + 9x9 @0.1/0.5 (5.0 h) 5. main_tournament chunk B: 9x9 @1.0 + puzzles (3.3 h)
+6. failure_mining (minutes) 7-8. nodes_budget 9x9@10000, parts 1/2 and 2/2 (5.6 h each)
+9. nodes_budget everything else (5.5 h). Two overnight sessions cover everything (~26 h).
+
+**`nodes_budget` change.** Dropped `mcts_ab` and `mcts_ab_tac`: one simulation of those is a
+depth-2 alpha-beta search (~90-210 sims/s), so a node budget is incomparable for them and they were
+~80% of the cost (79.5 h -> 16.6 h with budgets [2000, 10000] unchanged).
+
+**Budget violation found by the pilot (not fixed; needs a decision).** `mcts_ab` and
+`mcts_ab_tac` exceed 1.5x the time budget on 52% / 54% of their moves (mean 1.07 s and
+max 3.98 s at a 0.5 s budget); all other 14 agents had 0 violations in ~19,000 moves. Cause: MCTS
+checks the clock every 64 simulations (the spec's rule), and an AB-leaf simulation costs 5-10 ms.
+Under the time-budget tournaments these two agents therefore think 2-8x longer than the rest
+(worst at the 0.1 s budget). Proposed fix (one line, hybrids only, keeps `max_iterations`
+determinism): make the clock-check interval a class attribute (64 in `MCTSAgent`, 1 in the AB-leaf
+`HybridMCTSAgent`). Until then, treat their time-mode results as invalid or report them with the
+violation counts (`summary.csv` has a `violations` column).
+
 ## Interface proposals
 
 None needed so far. `Board.copy(track_candidates=...)`, `WindowTracker` (public) and

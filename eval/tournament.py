@@ -347,6 +347,7 @@ def round_robin(
     budget_mode: str = "time",
     out_path: Path | None = None,
     node_budget: int = 20000,
+    opening_part: tuple[int, int] = (1, 1),
 ) -> list[GameRecord]:
     """Play every pair of agents and return all records.
 
@@ -366,9 +367,12 @@ def round_robin(
             budget (see `adapt_for_nodes`).
         out_path: JSONL file; None keeps results in memory only.
         node_budget: Nodes or simulations per move in "nodes" mode.
+        opening_part: ``(i, m)``: play only openings ``o`` with ``o % m == i - 1``.
+            Game ids do not depend on the part, so the m parts of one tournament
+            can run as separate invocations into the same file.
 
     Returns:
-        Records of exactly this tournament's games (resumed ones included).
+        Records of exactly the games of this part (resumed ones included).
 
     Raises:
         ValueError: On odd ``games_per_pair`` or an unknown ``budget_mode``.
@@ -384,6 +388,8 @@ def round_robin(
     tasks: list[_Task] = []
     for a, b in combinations(names, 2):
         for o in range(games_per_pair // 2):
+            if o % opening_part[1] != opening_part[0] - 1:
+                continue
             opening = make_opening(config, seed, o)
             for swap in (0, 1):
                 x, oo = (a, b) if swap == 0 else (b, a)

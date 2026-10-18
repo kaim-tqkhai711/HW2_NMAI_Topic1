@@ -217,3 +217,31 @@ def test_failure_report_is_rendered(tmp_path: Path) -> None:
     assert "```" in text and "forced win" in text and "its own scale" in text
     empty = failure_cases.render([], [])
     assert empty.count("No example found") == 2
+
+
+def test_chunked_run_equals_unchunked_run(tmp_path: Path) -> None:
+    cfg_path = _tiny("scaling", tmp_path)
+    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+    cfg["games_per_pair"] = 4
+    cfg["agents"] = cfg["agents"][:3]
+    cfg_path.write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    from eval.tournament import read_records
+
+    full = run_experiment(cfg_path, results_root=tmp_path / "a", n_workers=2, timestamp="full")
+    assert full is not None
+    chunk = tmp_path / "b" / "scaling" / "chunked"
+    run_experiment(cfg_path, run_dir=chunk, n_workers=2, only=["4x3@0.02"], part=(1, 2))
+    mid = {r.game_id for r in read_records(chunk / "games.jsonl")}
+    assert mid and all("5x3" not in g for g in mid)
+    run_experiment(cfg_path, run_dir=chunk, n_workers=2, only=["4x3@0.02"], part=(2, 2))
+    run_experiment(cfg_path, run_dir=chunk, n_workers=2, only=["5x3@0.02"], part=(1, 1))
+    ids = [r.game_id for r in read_records(chunk / "games.jsonl")]
+    want = [r.game_id for r in read_records(full / "games.jsonl")]
+    assert len(ids) == len(set(ids)) and set(ids) == set(want) and len(want) == 24
+    # an interrupted/duplicated chunk adds nothing
+    run_experiment(cfg_path, run_dir=chunk, n_workers=2, only=["4x3@0.02"], part=(1, 2))
+    assert len(read_records(chunk / "games.jsonl")) == 24
+    rows = list(csv.DictReader((chunk / "summary.csv").open()))
+    assert {int(r["n"]) for r in rows} == {4, 5} and sum(int(r["games"]) for r in rows) == 48
+    assert (chunk / "commands.log").read_text().count("\n") == 4
+    assert not (chunk / "puzzles.csv").exists()

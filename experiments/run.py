@@ -50,6 +50,7 @@ from eval.tournament import (
     GameRecord,
     RegistryFactory,
     max_workers,
+    read_records,
     round_robin,
 )
 from experiments.run_ab_ablation import measure, write_rows
@@ -221,6 +222,16 @@ def _node_budget(r: GameRecord) -> float:
     return float(r.game_id.split("|")[1].lstrip("n"))
 
 
+def write_summary(run_dir: Path, cfg: dict[str, Any]) -> None:
+    """Rebuild ``summary.csv`` from every game stored in the run directory."""
+    records = read_records(run_dir / "games.jsonl")
+    rows = summarise(records, cfg["budget_mode"], cfg.get("anchor")) if records else []
+    with (run_dir / "summary.csv").open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=SUMMARY_FIELDS)
+        w.writeheader()
+        w.writerows(rows)
+
+
 def run_puzzle_table(cfg: dict[str, Any], out: Path) -> None:
     """Accuracy of every agent per puzzle category -> puzzles.csv."""
     puzzles = load_puzzles(PUZZLE_FILE)
@@ -271,8 +282,28 @@ def run_experiment(
     dry_run: bool = False,
     n_workers: int | None = None,
     timestamp: str | None = None,
+    only: list[str] | None = None,
+    run_dir: Path | None = None,
+    part: tuple[int, int] = (1, 1),
+    extras: bool | None = None,
 ) -> Path | None:
-    """Run one config end to end and return its run directory (None for a dry run)."""
+    """Run one config (or one chunk of it) and return its run directory.
+
+    Args:
+        config_path: YAML config.
+        quick: Apply the quick reductions.
+        results_root: Parent of ``<config name>/<timestamp>``.
+        dry_run: Only print the estimate; returns None.
+        n_workers: Worker processes (capped at `max_workers()`).
+        timestamp: Fixed run-directory name (tests).
+        only: Cells to play, as ``"NxK@budget"`` (e.g. ``"9x5@0.5"``); default all.
+        run_dir: Continue in this existing run directory instead of a new one.
+        part: ``(i, m)``: play only the i-th of m interleaved opening slices.
+        extras: Run puzzle/depth tables; default only for an unchunked run.
+
+    The summary is always rebuilt from every game in the run directory's
+    ``games.jsonl``, so chunks can be run in any order and resumed.
+    """
     cfg = load_config(config_path)
     if quick:
         cfg = apply_quick(cfg)
@@ -283,35 +314,40 @@ def run_experiment(
           f"on {workers} workers (rough)", flush=True)
     if dry_run:
         return None
-    stamp = timestamp or datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_dir: Path = results_root / str(cfg["name"]) / stamp
+    if run_dir is None:
+        stamp = timestamp or datetime.now().strftime("%Y%m%d-%H%M%S")
+        run_dir = results_root / str(cfg["name"]) / stamp
     run_dir.mkdir(parents=True, exist_ok=True)
-    (run_dir / "config.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
-    write_environment(run_dir / "environment.txt", sys.argv)
+    if not (run_dir / "config.yaml").exists():
+        (run_dir / "config.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False),
+                                             encoding="utf-8")
+        write_environment(run_dir / "environment.txt", sys.argv)
+    with (run_dir / "commands.log").open("a", encoding="utf-8") as f:
+        f.write(f"{datetime.now().isoformat(timespec='seconds')} {' '.join(sys.argv)}\n")
     factories = parse_agents(cfg["agents"])
-    records: list[GameRecord] = []
     mode = cfg["budget_mode"]
+    games_file = run_dir / "games.jsonl"
     for n, k in cfg["boards"]:
         for b in cfg["budgets"]:
-            print(f"  {n}x{n} k={k} budget={b} ({mode})", flush=True)
-            records += round_robin(
+            if only is not None and f"{n}x{k}@{b:g}" not in only:
+                continue
+            print(f"  {n}x{n} k={k} budget={b} ({mode}) part {part[0]}/{part[1]}", flush=True)
+            round_robin(
                 factories, GameConfig(n, k), float(b) if mode == "time" else 0.0,
                 cfg["games_per_pair"], n_workers=workers, seed=cfg["seed"],
-                budget_mode=mode, out_path=run_dir / "games.jsonl",
+                budget_mode=mode, out_path=games_file,
                 node_budget=int(b) if mode == "nodes" else 20000,
+                opening_part=part,
             )
-    rows = summarise(records, mode, cfg.get("anchor"))
-    with (run_dir / "summary.csv").open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=SUMMARY_FIELDS)
-        w.writeheader()
-        w.writerows(rows)
-    if "puzzles" in cfg:
-        run_puzzle_table(cfg, run_dir / "puzzles.csv")
-    if "depth_table" in cfg:
-        d = int(cfg["depth_table"]["depth"])
-        write_rows(measure(d, 600.0, verbose=True), run_dir / "ab_depth.csv")
-    if "depth_scaling" in cfg:
-        run_depth_scaling(cfg["depth_scaling"], run_dir / "nodes_vs_depth.csv")
+    write_summary(run_dir, cfg)
+    if extras if extras is not None else (only is None and part == (1, 1)):
+        if "puzzles" in cfg:
+            run_puzzle_table(cfg, run_dir / "puzzles.csv")
+        if "depth_table" in cfg:
+            d = int(cfg["depth_table"]["depth"])
+            write_rows(measure(d, 600.0, verbose=True), run_dir / "ab_depth.csv")
+        if "depth_scaling" in cfg:
+            run_depth_scaling(cfg["depth_scaling"], run_dir / "nodes_vs_depth.csv")
     print(f"[{cfg['name']}] done -> {run_dir}", flush=True)
     return run_dir
 
@@ -323,8 +359,17 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--results", type=Path, default=Path("results"))
+    ap.add_argument("--only", nargs="+", default=None,
+                    help="cells to play, e.g. 9x5@0.5 7x4@1 (default: all)")
+    ap.add_argument("--run-dir", type=Path, default=None,
+                    help="continue in this existing run directory")
+    ap.add_argument("--part", default="1/1", help="i/m: play the i-th of m opening slices")
+    ap.add_argument("--extras", action="store_true", default=None,
+                    help="also run puzzle/depth tables (default: only for unchunked runs)")
     args = ap.parse_args()
-    run_experiment(args.config, args.quick, args.results, args.dry_run, args.workers)
+    i, m = (int(x) for x in args.part.split("/"))
+    run_experiment(args.config, args.quick, args.results, args.dry_run, args.workers,
+                   only=args.only, run_dir=args.run_dir, part=(i, m), extras=args.extras)
 
 
 if __name__ == "__main__":
