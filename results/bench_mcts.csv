@@ -1,0 +1,11 @@
+n,k,config,sims,time_s,sims_per_s,max_tree_depth
+9,5,random,8128,3.015,2695.4,3
+9,5,heuristic,5120,3.008,1702.2,3
+9,5,heuristic+rave,4928,3.052,1614.6,3
+9,5,eval (hybrid),13184,3.004,4389.4,3
+9,5,ab-leaf (hybrid),576,3.269,176.2,2
+11,5,random,7808,3.001,2601.8,3
+11,5,heuristic,4096,3.058,1339.4,3
+11,5,heuristic+rave,3456,3.021,1143.9,3
+11,5,eval (hybrid),9280,3.016,3077.3,3
+11,5,ab-leaf (hybrid),448,3.001,149.3,2
