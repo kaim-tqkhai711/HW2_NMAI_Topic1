@@ -7,6 +7,8 @@ from dataclasses import replace
 from agents.alphabeta import ABConfig, AlphaBetaAgent
 from agents.backtracking import BacktrackingAgent
 from agents.base import Agent
+from agents.hybrid import HybridConfig, HybridMCTSAgent
+from agents.mcts import MCTSAgent, MCTSConfig
 from agents.random_agent import RandomAgent
 
 _DEPTH = 4
@@ -25,6 +27,21 @@ AB_PRESETS: dict[str, ABConfig] = {
     "AB_FULL": AB_FULL,
 }
 
+MCTS_RANDOM = MCTSConfig(rollout="random")
+MCTS_HEURISTIC = MCTSConfig(rollout="heuristic")
+MCTS_RAVE = MCTSConfig(rollout="heuristic", rave=True)
+
+MCTS_EVAL = HybridConfig(leaf="eval")
+MCTS_AB = HybridConfig(leaf="ab")
+
+HYBRID_PRESETS: dict[str, HybridConfig] = {"MCTS_EVAL": MCTS_EVAL, "MCTS_AB": MCTS_AB}
+
+MCTS_PRESETS: dict[str, MCTSConfig] = {
+    "MCTS_RANDOM": MCTS_RANDOM,
+    "MCTS_HEURISTIC": MCTS_HEURISTIC,
+    "MCTS_RAVE": MCTS_RAVE,
+}
+
 # Depth cap for time-limited play: iterative deepening stops on the clock first.
 _TIMED_DEPTH = 64
 
@@ -33,9 +50,19 @@ def _ab_factory(cfg: ABConfig) -> Callable[[int], Agent]:
     return lambda seed: AlphaBetaAgent(cfg, seed=seed)
 
 
+def _mcts_factory(cfg: MCTSConfig) -> Callable[[int], Agent]:
+    return lambda seed: MCTSAgent(replace(cfg, seed=seed))
+
+
+def _hybrid_factory(cfg: HybridConfig) -> Callable[[int], Agent]:
+    return lambda seed: HybridMCTSAgent(replace(cfg, seed=seed))
+
+
 AGENT_REGISTRY: dict[str, Callable[[int], Agent]] = {
     "random": lambda seed: RandomAgent(seed=seed),
     "backtracking_d2": lambda seed: BacktrackingAgent(max_depth=2, seed=seed),
     **{name.lower(): _ab_factory(cfg) for name, cfg in AB_PRESETS.items()},
+    **{name.lower(): _mcts_factory(cfg) for name, cfg in MCTS_PRESETS.items()},
+    **{name.lower(): _hybrid_factory(cfg) for name, cfg in HYBRID_PRESETS.items()},
     "ab_full_timed": _ab_factory(replace(AB_FULL, max_depth=_TIMED_DEPTH)),
 }

@@ -60,7 +60,7 @@ class _Timeout(Exception):
 
 
 @lru_cache(maxsize=None)
-def _windows(n: int, k: int) -> tuple[tuple[tuple[int, ...], ...], tuple[tuple[int, ...], ...]]:
+def window_table(n: int, k: int) -> tuple[tuple[tuple[int, ...], ...], tuple[tuple[int, ...], ...]]:
     wins: list[tuple[int, ...]] = []
     for r in range(n):
         for c in range(n):
@@ -75,13 +75,22 @@ def _windows(n: int, k: int) -> tuple[tuple[tuple[int, ...], ...], tuple[tuple[i
     return tuple(wins), tuple(tuple(t) for t in through)
 
 
-class _Windows:
-    """Per-window stone counts, with the sets of windows one stone short of k."""
+class WindowTracker:
+    """Per-window stone counts, with the sets of windows one stone short of k.
+
+    Also used by the MCTS heuristic rollout. Call `place(move, player, +1)`
+    after a stone is placed and `place(move, player, -1)` after it is removed;
+    the tracker reads the board's live `cells_list` and never writes it.
+
+    Args:
+        board: Board whose current stones initialise the counters.
+    """
 
     def __init__(self, board: Board) -> None:
+        self.config = board.config
         n, self.k = board.n, board.config.k
         self.cells = board.cells_list
-        self.wins, self.through = _windows(n, self.k)
+        self.wins, self.through = window_table(n, self.k)
         self.cx = [0] * len(self.wins)
         self.co = [0] * len(self.wins)
         for m, v in enumerate(self.cells):
@@ -111,6 +120,25 @@ class _Windows:
                 to.add(w)
             else:
                 to.discard(w)
+
+
+    def winning_cells(self, player: int) -> list[int]:
+        """Sorted empty cells where `player` would complete a winning line."""
+        cl = self.cells
+        cfg = self.config
+        cells: set[int] = set()
+        for w in self.tx if player == X else self.to:
+            for c in self.wins[w]:
+                if cl[c] == EMPTY:
+                    if cfg.exact_k:
+                        cl[c] = player
+                        ok = wins_at(cl, cfg, c, player)
+                        cl[c] = EMPTY
+                        if not ok:
+                            continue
+                    cells.add(c)
+                    break
+        return sorted(cells)
 
 
 class AlphaBetaAgent(Agent):
@@ -161,7 +189,7 @@ class AlphaBetaAgent(Agent):
         self._deadline = t0 + time_budget_s
         self._board = board
         self._ev = IncrementalEval(board.cells_list, board.config, self.weights)
-        self._win = _Windows(board) if cfg.move_ordering else None
+        self._win: WindowTracker | None = WindowTracker(board) if cfg.move_ordering else None
         self._tt: dict[int, tuple[int, int, int, int]] = {}
         self._killers: list[list[int]] = [[-1, -1] for _ in range(cfg.max_depth + 4)]
         self._nodes = self._tt_hits = self._cutoffs = 0
@@ -226,21 +254,7 @@ class AlphaBetaAgent(Agent):
     def _winning_cells(self, player: int) -> list[int]:
         win = self._win
         assert win is not None
-        board = self._board
-        cl = board.cells_list
-        cells: set[int] = set()
-        for w in win.tx if player == X else win.to:
-            for c in win.wins[w]:
-                if cl[c] == EMPTY:
-                    if board.config.exact_k:
-                        cl[c] = player
-                        ok = wins_at(cl, board.config, c, player)
-                        cl[c] = EMPTY
-                        if not ok:
-                            continue
-                    cells.add(c)
-                    break
-        return sorted(cells)
+        return win.winning_cells(player)
 
     def _search(self, depth: int, alpha: int, beta: int, ply: int) -> int:
         self._nodes += 1
