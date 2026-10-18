@@ -1,0 +1,41 @@
+"""Named agent configurations and the seed -> agent registry used by tournaments."""
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import replace
+
+from agents.alphabeta import ABConfig, AlphaBetaAgent
+from agents.backtracking import BacktrackingAgent
+from agents.base import Agent
+from agents.random_agent import RandomAgent
+
+_DEPTH = 4
+
+AB_PLAIN = ABConfig(False, False, False, None, _DEPTH)
+AB_ORDER = ABConfig(True, False, False, None, _DEPTH)
+AB_ORDER_ID = ABConfig(True, True, False, None, _DEPTH)
+AB_ORDER_ID_TT = ABConfig(True, True, True, None, _DEPTH)
+AB_FULL = ABConfig(True, True, True, 2, _DEPTH, killer_moves=True)
+
+AB_PRESETS: dict[str, ABConfig] = {
+    "AB_PLAIN": AB_PLAIN,
+    "AB_ORDER": AB_ORDER,
+    "AB_ORDER_ID": AB_ORDER_ID,
+    "AB_ORDER_ID_TT": AB_ORDER_ID_TT,
+    "AB_FULL": AB_FULL,
+}
+
+# Depth cap for time-limited play: iterative deepening stops on the clock first.
+_TIMED_DEPTH = 64
+
+
+def _ab_factory(cfg: ABConfig) -> Callable[[int], Agent]:
+    return lambda seed: AlphaBetaAgent(cfg, seed=seed)
+
+
+AGENT_REGISTRY: dict[str, Callable[[int], Agent]] = {
+    "random": lambda seed: RandomAgent(seed=seed),
+    "backtracking_d2": lambda seed: BacktrackingAgent(max_depth=2, seed=seed),
+    **{name.lower(): _ab_factory(cfg) for name, cfg in AB_PRESETS.items()},
+    "ab_full_timed": _ab_factory(replace(AB_FULL, max_depth=_TIMED_DEPTH)),
+}
