@@ -24,7 +24,7 @@ from numpy.typing import NDArray
 from agents.alphabeta import WindowTracker
 from agents.base import Agent, SearchStats
 from core.board import Board
-from core.rules import EMPTY
+from core.rules import EMPTY, GameConfig
 
 _DRAWS = 1 << 14
 
@@ -101,6 +101,7 @@ class MCTSAgent(Agent):
         self._stats = SearchStats()
         self._root: Node | None = None
         self._root_hist: tuple[int, ...] = ()
+        self._root_board = Board(GameConfig(1, 1))
         self._root_n = 0
         self._root_cfg: object = None
         self._draws: list[float] = []
@@ -149,12 +150,16 @@ class MCTSAgent(Agent):
             or board.move_history[: len(self._root_hist)] != self._root_hist
         ):
             return None
+        ref = self._root_board.copy()
         node = old
         for m in board.move_history[len(self._root_hist):]:
             nxt = node.children.get(m)
-            if nxt is None:
+            if nxt is None or ref.is_terminal or m not in ref.empty_cells:
                 return None
+            ref.make(m)
             node = nxt
+        if ref.hash != board.hash or ref.to_move != board.to_move:
+            return None
         node.parent = None
         return node
 
@@ -179,6 +184,7 @@ class MCTSAgent(Agent):
             root = Node(-1, None, -board.to_move, False)
         self._root = root
         self._root_hist = board.move_history
+        self._root_board = board.copy()
         self._root_cfg = board.config
         self._tb = board.copy(track_candidates=True)
         self._sb = board.copy()

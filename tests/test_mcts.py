@@ -205,3 +205,16 @@ def test_registry_has_mcts_entries() -> None:
     for name in ("mcts_random", "mcts_heuristic", "mcts_rave"):
         agent = AGENT_REGISTRY[name](3)
         assert agent.select_move(QUIET_74.board(), 0.1) in range(49)
+
+
+def test_tree_is_not_reused_across_unrelated_positions_without_history() -> None:
+    # Boards built by from_string have an empty move history, so a history-prefix
+    # check alone would wrongly reuse the previous position's tree.
+    cfg = replace(MCTS_RANDOM, max_iterations=150)
+    agent = MCTSAgent(cfg)
+    for pos in (QUIET_74, WIN_IN_1_74, MUST_BLOCK_74, QUIET_74):
+        b = pos.board()
+        before = state(b)
+        assert agent.select_move(b, 60.0) in b.legal_moves()
+        assert agent._root is not None and agent._root.N == 150
+        assert state(b) == before

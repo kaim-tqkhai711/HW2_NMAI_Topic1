@@ -1,0 +1,548 @@
+[
+ {
+  "id": "7x4-win_in_1-00",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . O . . .\nO X X X . . .\n. . O . X O .\n. O . O . . .\n. X X . . . .\nO X . . . . .\n. . . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    1,
+    4
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "7x4-win_in_1-01",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. O . . X . O\nX . . . X O X\n. X . O . O .\n. X X O . . .\n. O . . . . .\n. . . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    5,
+    3
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "7x4-win_in_1-02",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. . . . . . .\n. . O X X . .\n. . . X . O .\n. . . X X . .\n. . O . . O .\n. . . . . O .",
+  "to_move": "X",
+  "correct": [
+   [
+    1,
+    3
+   ],
+   [
+    5,
+    3
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "7x4-win_in_1-03",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . X X .\n. . . X O O .\n. . . . X . .\nO O O . . X .\nX O . X O X .\n. . . . . . .\n. . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    2,
+    3
+   ],
+   [
+    3,
+    3
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "7x4-win_in_1-04",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . X . . .\n. X O X . O .\n. X X . . . .\n. O O . O . .\n. O . X . . .\nO . X . . . X\n. . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    2,
+    3
+   ],
+   [
+    3,
+    3
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "7x4-block-00",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. . . . . . .\n. . . . . . .\n. . . . . . .\n. . . . X . .\n. . X X X O .\n. . O . . O .",
+  "to_move": "O",
+  "correct": [
+   [
+    5,
+    1
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "7x4-block-01",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . O O . .\n. . . X O X .\n. . . O X X X\nO . . . X . .\n. O . . . . .\nX . . . . . .\nO . . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    3,
+    2
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "7x4-block-02",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . O . .\n. . . . . . .\n. . . O . . .\n. X . O . . .\n. O . X O O .\n. X . . X . X\nX . . . . X .",
+  "to_move": "O",
+  "correct": [
+   [
+    3,
+    2
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "7x4-block-03",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. . . . . . .\n. X . X O . .\nX . O O . . .\n. X . O . . .\n. . X X . . .\n. . . . O . .",
+  "to_move": "O",
+  "correct": [
+   [
+    6,
+    3
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "7x4-block-04",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. . . . X . .\n. . . O X . .\n. O X O X . .\n. X O . O . .\n. X . . . . .\n. . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    0,
+    4
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "7x4-win_in_3-00",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. . . . . . .\n. . . . . . .\n. . . . . . .\n. . . X . . .\n. . O . X . .\n. . O . X . O",
+  "to_move": "X",
+  "correct": [
+   [
+    3,
+    2
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "7x4-win_in_3-01",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. O . . . O .\n. . . . . . .\n. . X X O . .\n. X . . . . .\n. . . . . . .\n. . . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    2,
+    3
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "7x4-win_in_3-02",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . O . . . .\n. . X . . . .\n. O X . . . X\n. . O . O X X\n. . . X . . .\n. . O . O . .\n. . . . . X .",
+  "to_move": "O",
+  "correct": [
+   [
+    4,
+    4
+   ],
+   [
+    5,
+    3
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "7x4-win_in_3-03",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. . . X X O .\n. . O . . . .\nO X . O . . .\nX . . . . . .\n. X . . . . .\n. . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    1,
+    1
+   ],
+   [
+    2,
+    4
+   ],
+   [
+    4,
+    4
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "7x4-win_in_3-04",
+  "config": {
+   "n": 7,
+   "k": 4,
+   "exact_k": false
+  },
+  "board": ". . . . . . .\n. . . X . . .\n. . . O . X .\n. . . . . O X\n. . . . O . X\n. X . . X O O\n. O . . . . X",
+  "to_move": "O",
+  "correct": [
+   [
+    4,
+    5
+   ],
+   [
+    5,
+    3
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "9x5-win_in_1-00",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". O . . X X . . .\nO X O O O O . . .\n. . . X X X . . .\n. . . . . . O . .\n. . X . . . . . .\n. . X . . X . . .\n. O . . . . . . .\n. . . . . . . . .\n. . . . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    1,
+    6
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "9x5-win_in_1-01",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . X X . . . . .\nO O . X O . . . .\n. . . X O . . . .\n. O X . O . . . .\n. O X X . . . . .\n. . X X O . . . .\n. . . . O . . . .\n. . . . . . . . .\n. . . . . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    3,
+    3
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "9x5-win_in_1-02",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . X X . . . .\nO . . . . . . . .\nX . . . . . . . .\nO . . X . . X . .\nO O O O . . . . .\nX O X . . . . . .\n. . . X . . . . .\n. . . . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    5,
+    4
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "9x5-win_in_1-03",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . X . .\n. . . . . . . X .\n. O . . . . X . .\nO . O X X X . . .\n. . . . O . . . .\n. . . . O . . . .\n. . . X . O . . .\n. . . . . . . . .\n. . . . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    4,
+    3
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "9x5-win_in_1-04",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . O\n. . . O . X X X .\n. O X . . O O . .\n. . X . . . . X .\nX O . . . . . O .\n. . X . . . . . .\n. O X . . . . . .\n. O . . . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    5,
+    2
+   ]
+  ],
+  "category": "win_in_1"
+ },
+ {
+  "id": "9x5-block-00",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . .\n. . . . . X . . .\n. . . . . . . . .\n. . . . O . . . .\n. . . X X . . . .\n. . . O X . X O .\n. . . . O O O O X\n. . . . . . . . X",
+  "to_move": "X",
+  "correct": [
+   [
+    7,
+    3
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "9x5-block-01",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . O . . .\n. . . . O X . . .\nO X . . X X . . .\nO . . . . X . . .\nX . . . . O . . .\n. . O . . O . . .\n. X . X X O . . .\n. . . . . O . . .\n. . . . . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    8,
+    5
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "9x5-block-02",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . X . O . . .\n. . . X X O O O .\n. . . X O X X . .\n. . . O . X . O X\n. . . . . . X X O\n. . . . . . O . .",
+  "to_move": "O",
+  "correct": [
+   [
+    6,
+    6
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "9x5-block-03",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". O . X . . . . .\n. . O X . . . . .\n. . X O X . . . .\n. O X . . . . . .\n. . . . . . . . .\n. X X O . . . . .\n. . X . O . . . .\n. . O . . . . . .\n. . . . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    4,
+    2
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "9x5-block-04",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . .\n. . O . X . X . .\n. . O X O . . . .\n. O . . . O . . .\n. X O X O . . . .\n. O . . X X . . .\nO . X . . . . . .\n. . . X . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    4,
+    3
+   ]
+  ],
+  "category": "block"
+ },
+ {
+  "id": "9x5-win_in_3-00",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . X X X .\n. O X . . O . . .\n. . X O O . . . .\n. . . O X . . . .\n. . . . O . . O .\n. . . O . X X . .",
+  "to_move": "X",
+  "correct": [
+   [
+    3,
+    4
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "9x5-win_in_3-01",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . .\n. . . . X . . . .\n. . . X O . . . .\n. X . X X . . . .\n. X X O . . O . .\n. . O O . . . . .\n. . . . O . . . .\n. . . O . . . . .",
+  "to_move": "X",
+  "correct": [
+   [
+    4,
+    2
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "9x5-win_in_3-02",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. X O O X O . O .\n. . . X . X O . .\n. . X . . . X O .\n. . X O . O . . .\n. . X . . X . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    3,
+    4
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "9x5-win_in_3-03",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . .\n. . . . . . . . .\n. . . . X . . . .\n. . O X . O . . .\n. . . O . . . . .\n. . . . O X X . .\n. . . X . . . . .\n. . . . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    3,
+    1
+   ],
+   [
+    7,
+    5
+   ]
+  ],
+  "category": "win_in_3"
+ },
+ {
+  "id": "9x5-win_in_3-04",
+  "config": {
+   "n": 9,
+   "k": 5,
+   "exact_k": false
+  },
+  "board": ". . . . . . . . .\n. . . . . . . . .\n. . . O O O . . .\n. . . . O . . X X\n. . . . O X O X .\n. . . . X X O . .\n. . . X . . X . .\n. . . . . . . . .\n. . . . . . . . .",
+  "to_move": "O",
+  "correct": [
+   [
+    2,
+    2
+   ],
+   [
+    2,
+    6
+   ]
+  ],
+  "category": "win_in_3"
+ }
+]
