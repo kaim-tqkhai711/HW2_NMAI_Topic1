@@ -99,8 +99,9 @@ def tiny_results(tmp_path_factory: pytest.TempPathFactory) -> Path:
     for name in NAMES:
         run_experiment(_tiny(name, root), results_root=root, n_workers=2, timestamp="t1")
     (root / "solve.csv").write_text(
-        "n,k,memo,value,nodes,time_s,solved,symmetry\n"
-        "3,3,0,0,96679,0.5,1,0\n4,4,1,,100,1.0,0,1\n4,4,1,0,5572627,50.7,1,1\n",
+        "n,k,variant,early_stop,value,nodes,time_s,solved\n"
+        "3,3,none,0,0,549946,0.5,1\n4,4,memo,1,,100,1.0,0\n"
+        "4,4,memo+symmetry,1,0,5572627,50.7,1\n",
         encoding="utf-8",
     )
     return root

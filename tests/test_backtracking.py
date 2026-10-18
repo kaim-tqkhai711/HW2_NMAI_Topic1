@@ -151,3 +151,32 @@ def test_finished_game_rejected() -> None:
         b.make(m)
     with pytest.raises(ValueError):
         BacktrackingAgent().select_move(b, 1.0)
+
+
+def test_without_early_stop_the_memo_free_tree_is_exactly_the_known_size() -> None:
+    r = solve(GameConfig(3, 3), memo=False, early_stop=False)
+    assert r.value == 0 and r.nodes == 549946  # all positions of 3x3 tic-tac-toe
+
+
+def test_early_stop_never_changes_the_value_only_the_work() -> None:
+    for n, k in [(3, 2), (3, 3), (4, 3)]:
+        cfg = GameConfig(n, k)
+        for memo, sym in [(True, False), (True, True)]:
+            full = solve(cfg, memo=memo, symmetry=sym, early_stop=False)
+            fast = solve(cfg, memo=memo, symmetry=sym, early_stop=True)
+            assert full.value == fast.value and full.nodes >= fast.nodes
+
+
+def test_shipped_growth_csv_is_plain_minimax_without_pruning() -> None:
+    # BacktrackingAgent has no memo, symmetry or cutoffs; with k=4 on 7x7 no win is
+    # possible within 6 plies, so every completed depth must hit the closed form exactly.
+    import csv
+    from pathlib import Path
+
+    rows = list(csv.DictReader(
+        (Path(__file__).resolve().parent.parent / "results" / "backtracking_growth.csv").open()))
+    done = [r for r in rows if r["timed_out"] == "0"]
+    assert len(done) >= 4
+    for r in done:
+        assert int(r["nodes"]) == int(r["bound_nodes"]), r
+    assert any(r["timed_out"] == "1" for r in rows)

@@ -57,12 +57,11 @@ def solve_table(results_root: Path) -> str | None:
         return None
     rows = []
     for r in read_csv(f):
-        mode = "none" if r["memo"] == "0" else ("Zobrist+symmetry" if r.get("symmetry") == "1"
-                                                else "Zobrist")
         value = {"1": "X wins", "0": "draw", "-1": "O wins"}.get(r["value"], "not solved")
-        rows.append([f"{r['n']}x{r['n']}", r["k"], mode, value, f"{int(r['nodes']):,}",
-                     f"{float(r['time_s']):.1f}"])
-    return latex_table(["board", "k", "memo", "value", "nodes", "time (s)"], rows,
+        rows.append([f"{r['n']}x{r['n']}", r["k"], r["variant"],
+                     "yes" if r["early_stop"] == "1" else "no", value,
+                     f"{int(r['nodes']):,}", f"{float(r['time_s']):.1f}"])
+    return latex_table(["board", "k", "memo", "early stop", "value", "nodes", "time (s)"], rows,
                        "Exact game values by full minimax.", "tab:solve")
 
 

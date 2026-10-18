@@ -68,10 +68,13 @@ class _Solver:
     positions share one entry.
     """
 
-    def __init__(self, board: Board, memo: bool, symmetry: bool, deadline: float) -> None:
+    def __init__(
+        self, board: Board, memo: bool, symmetry: bool, deadline: float, early_stop: bool
+    ) -> None:
         self.board = board
         self.table: dict[int, int] | None = {} if memo else None
         self.symmetry = symmetry
+        self.early_stop = early_stop
         self.deadline = deadline
         self.nodes = 0
         n = board.n
@@ -121,7 +124,7 @@ class _Solver:
                 best = v
                 if at_root:
                     self.best_first = m
-                if best == 1:
+                if best == 1 and self.early_stop:
                     break
         if table is not None:
             table[key] = best
@@ -133,25 +136,27 @@ def solve(
     memo: bool = True,
     timeout_s: float = 600.0,
     symmetry: bool = True,
+    early_stop: bool = True,
 ) -> SolveResult:
     """Solve the empty-board game exactly.
 
-    Full minimax over all moves, except that a node stops expanding once a
-    winning child is found (+1 is the maximum). Memoization is the only other
-    difference between modes, so node counts isolate its effect.
+    Full minimax over all moves. With ``early_stop`` a node stops expanding once
+    a winning child is found (+1 is the maximum); without it every child is
+    expanded, so the memo-free node count is exactly the game-tree size.
 
     Args:
         config: Board size and win length.
         memo: Cache values by Zobrist hash.
         timeout_s: Hard wall-clock limit; the search is abandoned cleanly.
         symmetry: With `memo`, identify the 8 symmetric images of a position.
+        early_stop: Stop expanding a node at its first winning child.
 
     Returns:
         A `SolveResult`; `solved` is False if the limit was hit.
     """
     board = Board(config)
     t0 = perf_counter()
-    solver = _Solver(board, memo, memo and symmetry, t0 + timeout_s)
+    solver = _Solver(board, memo, memo and symmetry, t0 + timeout_s, early_stop)
     try:
         value = solver.negamax()
     except _Timeout:
@@ -159,28 +164,36 @@ def solve(
     return SolveResult(value, solver.nodes, perf_counter() - t0, solver.best_first, True)
 
 
+VARIANTS = [("none", False, False), ("memo", True, False), ("memo+symmetry", True, True)]
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--timeout", type=float, default=600.0, help="symmetric-memo runs (s)")
+    ap.add_argument("--timeout", type=float, default=600.0, help="memo+symmetry runs (s)")
     ap.add_argument("--ablation-timeout", type=float, default=120.0,
-                    help="memo-free and plain-memo runs (s)")
+                    help="no-memo and plain-memo runs (s)")
     ap.add_argument("--out", type=Path, default=Path("results/solve.csv"))
     args = ap.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    modes = [(False, False), (True, False), (True, True)]
     with args.out.open("w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["n", "k", "memo", "value", "nodes", "time_s", "solved", "symmetry"])
+        w.writerow(["n", "k", "variant", "early_stop", "value", "nodes", "time_s", "solved"])
         for n, k in CONFIGS:
-            for memo, sym in modes:
+            variants = VARIANTS if (n, k) != (5, 4) else VARIANTS[2:]
+            for name, memo, sym in variants:
                 limit = args.timeout if sym else args.ablation_timeout
-                r = solve(GameConfig(n, k), memo=memo, timeout_s=limit, symmetry=sym)
-                shown = r.value if r.solved else "not solved within budget"
-                print(f"({n},{k}) memo={memo} sym={sym}: value={shown} "
-                      f"nodes={r.nodes} t={r.time_s:.1f}s", flush=True)
-                w.writerow([n, k, int(memo), "" if r.value is None else r.value,
-                            r.nodes, f"{r.time_s:.3f}", int(r.solved), int(sym)])
-                f.flush()
+                # Full minimax first; fall back to early-stop only if that does not finish.
+                for early in ((False, True) if (n, k) != (5, 4) else (True,)):
+                    r = solve(GameConfig(n, k), memo=memo, timeout_s=limit, symmetry=sym,
+                              early_stop=early)
+                    shown = r.value if r.solved else "not solved within budget"
+                    print(f"({n},{k}) {name} early_stop={early}: value={shown} "
+                          f"nodes={r.nodes} t={r.time_s:.1f}s", flush=True)
+                    w.writerow([n, k, name, int(early), "" if r.value is None else r.value,
+                                r.nodes, f"{r.time_s:.3f}", int(r.solved)])
+                    f.flush()
+                    if r.solved:
+                        break
 
 
 if __name__ == "__main__":

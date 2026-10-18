@@ -1,21 +1,23 @@
 \begin{table}[ht]
 \centering
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrrrrr}
 \toprule
-board & k & memo & value & nodes & time (s) \\
+board & k & memo & early stop & value & nodes & time (s) \\
 \midrule
-3x3 & 3 & none & draw & 96,679 & 0.5 \\
-3x3 & 3 & Zobrist & draw & 10,515 & 0.1 \\
-3x3 & 3 & Zobrist+symmetry & draw & 1,454 & 0.0 \\
-4x4 & 3 & none & X wins & 11,455,268 & 62.9 \\
-4x4 & 3 & Zobrist & X wins & 895,225 & 6.4 \\
-4x4 & 3 & Zobrist+symmetry & X wins & 423,247 & 3.3 \\
-4x4 & 4 & none & not solved & 19,361,792 & 120.0 \\
-4x4 & 4 & Zobrist & not solved & 15,338,496 & 120.0 \\
-4x4 & 4 & Zobrist+symmetry & draw & 5,572,627 & 50.7 \\
-5x5 & 4 & none & not solved & 17,723,392 & 120.0 \\
-5x5 & 4 & Zobrist & not solved & 12,886,016 & 120.0 \\
-5x5 & 4 & Zobrist+symmetry & not solved & 62,039,040 & 600.0 \\
+3x3 & 3 & none & no & draw & 549,946 & 3.3 \\
+3x3 & 3 & memo & no & draw & 16,168 & 0.1 \\
+3x3 & 3 & memo+symmetry & no & draw & 2,271 & 0.0 \\
+4x4 & 3 & none & no & not solved & 18,225,152 & 120.0 \\
+4x4 & 3 & none & yes & X wins & 11,455,268 & 79.0 \\
+4x4 & 3 & memo & no & not solved & 13,705,216 & 120.0 \\
+4x4 & 3 & memo & yes & X wins & 895,225 & 7.6 \\
+4x4 & 3 & memo+symmetry & no & X wins & 2,940,819 & 29.2 \\
+4x4 & 4 & none & no & not solved & 19,172,352 & 120.0 \\
+4x4 & 4 & none & yes & not solved & 21,238,784 & 120.0 \\
+4x4 & 4 & memo & no & not solved & 15,666,176 & 120.0 \\
+4x4 & 4 & memo & yes & not solved & 15,783,936 & 120.0 \\
+4x4 & 4 & memo+symmetry & no & draw & 6,460,009 & 61.0 \\
+5x5 & 4 & memo+symmetry & yes & not solved & 67,542,016 & 600.0 \\
 \bottomrule
 \end{tabular}
 \caption{Exact game values by full minimax.}
