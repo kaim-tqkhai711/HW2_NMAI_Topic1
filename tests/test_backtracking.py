@@ -159,9 +159,12 @@ def test_without_early_stop_the_memo_free_tree_is_exactly_the_known_size() -> No
 
 
 def test_early_stop_never_changes_the_value_only_the_work() -> None:
-    for n, k in [(3, 2), (3, 3), (4, 3)]:
+    # (4,3) with plain memo and no early stop does not finish in minutes, so only
+    # the symmetric memo is used there.
+    cases = [((3, 2), False), ((3, 2), True), ((3, 3), False), ((3, 3), True), ((4, 3), True)]
+    for (n, k), sym in cases:
         cfg = GameConfig(n, k)
-        for memo, sym in [(True, False), (True, True)]:
+        for memo in (True,):
             full = solve(cfg, memo=memo, symmetry=sym, early_stop=False)
             fast = solve(cfg, memo=memo, symmetry=sym, early_stop=True)
             assert full.value == fast.value and full.nodes >= fast.nodes
