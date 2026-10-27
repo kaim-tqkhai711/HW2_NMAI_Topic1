@@ -149,15 +149,36 @@ Run order (each chunk <= 6 h, all idempotent/resumable; commands in `results/run
 depth-2 alpha-beta search (~90-210 sims/s), so a node budget is incomparable for them and they were
 ~80% of the cost (79.5 h -> 16.6 h with budgets [2000, 10000] unchanged).
 
-**Budget violation found by the pilot (not fixed; needs a decision).** `mcts_ab` and
-`mcts_ab_tac` exceed 1.5x the time budget on 52% / 54% of their moves (mean 1.07 s and
-max 3.98 s at a 0.5 s budget); all other 14 agents had 0 violations in ~19,000 moves. Cause: MCTS
-checks the clock every 64 simulations (the spec's rule), and an AB-leaf simulation costs 5-10 ms.
-Under the time-budget tournaments these two agents therefore think 2-8x longer than the rest
-(worst at the 0.1 s budget). Proposed fix (one line, hybrids only, keeps `max_iterations`
-determinism): make the clock-check interval a class attribute (64 in `MCTSAgent`, 1 in the AB-leaf
-`HybridMCTSAgent`). Until then, treat their time-mode results as invalid or report them with the
-violation counts (`summary.csv` has a `violations` column).
+**Budget violation found by the pilot: FIXED** (commits `14ae2c7`, `fd50e36`; see "Clock fix and
+pilot2 gate" below). Original finding: `mcts_ab` / `mcts_ab_tac` exceeded 1.5x the time budget on
+12-13 % (7x7) and 68-70 % (9x9) of their moves; cause: the clock was checked every 64 simulations
+and an AB-leaf simulation costs 5-10 ms.
+
+### Clock fix and pilot2 gate
+
+* `agents/mcts.py`: the clock is checked every 64 simulations while the running mean cost of a
+  simulation is <= 1 ms, and after every simulation otherwise (one adaptive rule, no per-class
+  constant). Determinism under `max_iterations` is unchanged. Tests: `tests/test_mcts_clock.py`.
+* `eval/tournament.py`: `GameRecord.violations_x / violations_o` count over-budget moves per side;
+  `summary.csv` attributes them to the agent that made them (old records are recomputed from move
+  wall times). The old `violations` column added both sides' moves to each agent (e.g. `random`
+  showed 9 / 79 violations in the first pilot). Test: `test_violations_are_attributed_to_the_slow_agent`.
+* Gate: `pilot_main` rerun to `results/pilot_main/pilot2` (0.5 s, 10 games/pair, 2,400 games).
+  Rates computed from the wall time of every move: `python -m experiments.violation_rates <run dir> --md`
+  (violation = more than 1.5 x budget; "max x" = worst wall time / budget).
+
+| agent | 7x7 before % | 7x7 after % | 9x9 before % | 9x9 after % | max x before (9x9) | max x after (9x9) |
+|---|---|---|---|---|---|---|
+| mcts_ab | 12.26 | **0.00** | 67.73 | **0.00** | 7.96 | 1.23 |
+| mcts_ab_tac | 12.87 | **0.27** | 70.18 | **0.09** | 7.88 | 1.52 |
+| all 14 other agents | 0.00 | 0.00 | 0.00 | 0.00 | <= 1.31 | <= 1.28 |
+
+  Result: worst rate over all agents and boards is 0.27 % (< 1 %): **gate passed**. Mean wall time
+  per move of `mcts_ab` / `mcts_ab_tac` fell from 0.60 / 0.48 s (7x7) and 1.07 / 1.02 s (9x9) to
+  0.51 / 0.40 s and 0.52 / 0.50 s. Their 9x9 Elo dropped from 1528 / 1528 to 950 / 1128 (10 games per
+  pair, CI about +-200): the earlier ranking of the two hybrids was inflated by their extra thinking time.
+  Caveat: about 2 minutes of `pytest` ran on the same machine during pilot2, so the few
+  remaining 1.4-1.5x maxima (`ab_order` 7x7, `mcts_ab_tac`) may include load noise; they stay below 1 %.
 
 ## Interface proposals
 
