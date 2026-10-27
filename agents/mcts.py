@@ -27,6 +27,7 @@ from core.board import Board
 from core.rules import EMPTY, GameConfig
 
 _DRAWS = 1 << 14
+_SLOW_SIM_S = 1e-3
 
 
 @dataclass(frozen=True)
@@ -171,8 +172,10 @@ class MCTSAgent(Agent):
     def select_move(self, board: Board, time_budget_s: float) -> int:
         """Run MCTS for at most `time_budget_s` seconds and return the most visited move.
 
-        The clock is checked every 64 simulations, so at least 64 run unless
-        ``max_iterations`` is smaller.
+        The clock is checked every 64 simulations while the running mean cost of a
+        simulation is at most 1 ms, and after every simulation otherwise (slow
+        leaf evaluations such as the alpha-beta hybrid), so the overshoot is
+        bounded by one simulation.
 
         Raises:
             ValueError: If the game is already over.
@@ -213,11 +216,16 @@ class MCTSAgent(Agent):
                                              "tactical": 1.0})
             return immediate
         if len(legal) > 1:
+            t_loop = perf_counter()
+            slow = True
             while True:
                 if cfg.max_iterations is not None and sims >= cfg.max_iterations:
                     break
-                if sims and not sims & 63 and perf_counter() > deadline:
-                    break
+                if sims and (slow or not sims & 63):
+                    now = perf_counter()
+                    if now > deadline:
+                        break
+                    slow = (now - t_loop) / sims > _SLOW_SIM_S
                 self._simulate(root)
                 sims += 1
         best = self._most_visited(root, forced or legal)
