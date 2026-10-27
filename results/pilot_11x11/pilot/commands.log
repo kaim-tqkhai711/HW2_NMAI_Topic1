@@ -1,0 +1,1 @@
+2026-10-27T19:46:08 D:\HCMUT\Năm 4\NMAI\HW2_NMAI_Topic1\experiments\run.py --config experiments/configs/pilot_11x11.yaml --run-dir results/pilot_11x11/pilot --workers 10

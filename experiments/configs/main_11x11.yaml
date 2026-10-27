@@ -1,5 +1,5 @@
 # Main comparison, 11x11 k=5: reduced roster (the full 16 would take ~8 h), one time budget.
-# mcts_ab_tac is added only if the pilot shows it respects the budget after the clock fix.
+# mcts_ab_tac is included: in pilot_11x11 it respected the budget (0.00 % over 1.5x, max 1.28x).
 name: main_11x11
 seed: 20260312
 boards: [[11, 5]]
@@ -16,3 +16,4 @@ agents:
   - mcts_eval
   - mcts_eval_tac
   - mcts_heuristic_tac
+  - mcts_ab_tac

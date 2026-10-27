@@ -1,18 +1,18 @@
 """Extrapolate full-run times from a pilot and plan <= 6 h chunks.
 
-Run: python -m experiments.estimate_runtime [--pilot results/pilot_main/pilot]
-         [--out results/runtime_estimate.md] [--chunk-hours 6]
+Run: python -m experiments.estimate_runtime [--pilot results/pilot_main/pilot2
+         --pilot results/pilot_11x11/pilot] [--out results/runtime_estimate.md] [--chunk-hours 6]
 
 Model (all numbers measured in the pilot, nothing assumed except the scaling rules):
 
 * per agent and board: mean wall time per move ``m_a`` at the pilot budget ``b0``;
   an agent is *budget-bound* if ``m_a / b0 >= 0.85`` (time per move scales with the
   budget), *fixed-cost* if lower (stops early, e.g. random, depth-capped search) and
-  *overshooting* if above 1.2 (it only checks the clock every 64 simulations, so
-  ``max(budget, m_a)``);
+  *overshooting* if above 1.2 (coarse clock checks, so ``max(budget, m_a)``);
 * node budgets: time per move = nodes / measured nodes-per-second of that agent;
-* plies per game per board from the pilot (11x11 scaled by 11/9 from 9x9);
-* parallel efficiency = total game wall time / (pilot elapsed x workers).
+* plies per game per board from the pilots (a board without a pilot is scaled from 9x9);
+* parallel efficiency = total game wall time / sum of (pilot elapsed x pilot workers); the
+  planned runs use the pilots' worker count (``--workers`` is written into every command).
 
 A game costs ``(plies - opening) / 2 * (t_x + t_o) + overhead``; a cell costs
 games x that / (workers x efficiency).
@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from datetime import datetime
 from itertools import combinations
 from math import ceil
 from pathlib import Path
@@ -156,6 +157,8 @@ def command(ch: Chunk, workers: int | None = None) -> str:
     """The shell command that runs one chunk (idempotent and resumable)."""
     cmd = (f"python -m experiments.run --config experiments/configs/{ch.config}.yaml "
            f"--run-dir results/{ch.config}/full --only {' '.join(ch.cells)}")
+    if workers is not None:
+        cmd += f" --workers {workers}"
     if ch.part != (1, 1):
         cmd += f" --part {ch.part[0]}/{ch.part[1]}"
     if ch.extras:
@@ -163,45 +166,62 @@ def command(ch: Chunk, workers: int | None = None) -> str:
     return cmd
 
 
-def run(pilot: Path, chunk_hours: float) -> tuple[str, list[Chunk]]:
-    """Build the markdown report and the chunk list."""
-    recs = read_records(pilot / "games.jsonl")
-    start_line = (pilot / "commands.log").read_text().splitlines()[0].split()[0]
-    from datetime import datetime
+def pilot_workers(pilot: Path) -> int:
+    """Worker count a pilot ran with (``max_workers`` line of its environment.txt)."""
+    for line in (pilot / "environment.txt").read_text(encoding="utf-8").splitlines():
+        if line.startswith("max_workers:"):
+            return int(line.split(":")[1])
+    return max_workers()
 
-    t0 = datetime.fromisoformat(start_line).timestamp()
-    elapsed = (pilot / "games.jsonl").stat().st_mtime - t0
-    workers = max_workers()
+
+def pilot_elapsed(pilot: Path) -> float:
+    """Seconds from the first logged command to the last written game."""
+    start = (pilot / "commands.log").read_text().splitlines()[0].split()[0]
+    return (pilot / "games.jsonl").stat().st_mtime - datetime.fromisoformat(start).timestamp()
+
+
+def run(pilots: list[Path], chunk_hours: float) -> tuple[str, list[Chunk]]:
+    """Build the markdown report and the chunk list."""
+    per_pilot = [(p, read_records(p / "games.jsonl")) for p in pilots]
+    recs = [r for _, rs in per_pilot for r in rs]
+    workers = pilot_workers(pilots[0])
     b0 = recs[0].time_budget_s
     prof, plies = profiles(recs, b0)
     game_wall = sum(r.wall_time_s for r in recs)
-    eff = game_wall / (elapsed * workers)
+    capacity = sum(pilot_elapsed(p) * pilot_workers(p) for p in pilots)
+    eff = game_wall / capacity
     lines = [
         "# Runtime estimate", "",
-        f"Pilot: {len(recs)} games, budget {b0} s, {workers} workers, elapsed "
-        f"{elapsed / 60:.1f} min, summed game wall time {game_wall / 3600:.2f} h, "
-        f"parallel efficiency {eff:.2f}.", "",
+        "Pilots: " + "; ".join(f"`{p}` ({len(rs)} games, {pilot_elapsed(p) / 60:.1f} min, "
+                               f"{pilot_workers(p)} workers)" for p, rs in per_pilot) + ".",
+        f"Budget {b0} s, summed game wall time {game_wall / 3600:.2f} h, "
+        f"parallel efficiency {eff:.2f}. Planned runs use {workers} workers.", "",
         "Mean plies per game: " + ", ".join(f"{n}x{n}: {v:.1f}" for n, v in sorted(plies.items())) + ".",
-        "", "Per-agent time per move at the pilot budget (9x9):", "",
-        "| agent | s/move | fill | nodes/s |", "|---|---|---|---|"]
-    for (n, a), p in sorted(prof.items()):
-        if n == 9:
-            lines.append(f"| {a} | {p.per_move_s:.3f} | {p.fill:.2f} | {p.nps:,.0f} |")
-    pcfg = load_config(CONFIG_DIR / "pilot_main.yaml")
-    predicted = sum(cell_seconds(pcfg, n, b0, prof, plies, b0) for n, _ in pcfg["boards"])
-    lines += ["", f"Model check on the pilot itself (in-sample, so it only tests the plumbing): "
-              f"predicted {predicted / (workers * eff) / 60:.1f} min vs measured "
-              f"{elapsed / 60:.1f} min.", ""]
+    ]
+    for size in sorted(plies):
+        lines += ["", f"Per-agent time per move at the pilot budget ({size}x{size}):", "",
+                  "| agent | s/move | fill | nodes/s |", "|---|---|---|---|"]
+        for (n, a), p in sorted(prof.items()):
+            if n == size:
+                lines.append(f"| {a} | {p.per_move_s:.3f} | {p.fill:.2f} | {p.nps:,.0f} |")
+    for pilot, rs in per_pilot:
+        pcfg = load_config(pilot / "config.yaml")
+        predicted = sum(cell_seconds(pcfg, n, b0, prof, plies, b0) for n, _k, _b in cell_list(pcfg))
+        elapsed = pilot_elapsed(pilot)
+        lines += ["", f"Model check on `{pilot}` (in-sample, so it only tests the plumbing): "
+                  f"predicted {predicted / (workers * eff) / 60:.1f} min vs measured "
+                  f"{elapsed / 60:.1f} min."]
     cells: list[tuple[str, str, float]] = []
     per_cfg: dict[str, float] = {}
     for name in FULL_ORDER:
         cfg = load_config(CONFIG_DIR / f"{name}.yaml")
+        per_cfg[name] = 0.0
         for n, k, b in cell_list(cfg):
             secs = cell_seconds(cfg, n, float(b), prof, plies, b0) / (workers * eff)
             cells.append((name, f"{n}x{k}@{b:g}", secs / 3600))
-            per_cfg[name] = per_cfg.get(name, 0.0) + secs / 3600
+            per_cfg[name] += secs / 3600
     extras_h = {k: v / 3600 for k, v in EXTRAS_S.items()}
-    lines += ["", "## Per cell (hours, extrapolated)", "", "| config | cell | hours |", "|---|---|---|"]
+    lines += ["", "## Per cell (hours)", "", "| config | cell | hours |", "|---|---|---|"]
     lines += [f"| {c} | {cell} | {h:.2f} |" for c, cell, h in cells]
     lines += ["", "## Per config", "", "| config | games hours | + extras | total |", "|---|---|---|---|"]
     for name in FULL_ORDER:
@@ -212,7 +232,7 @@ def run(pilot: Path, chunk_hours: float) -> tuple[str, list[Chunk]]:
     lines += ["", f"## Chunks (each <= {chunk_hours:g} h, run in this order; all resumable)", "",
               "| # | est. h | command |", "|---|---|---|"]
     for i, ch in enumerate(chunks, 1):
-        lines.append(f"| {i} | {ch.hours:.1f} | `{command(ch)}` |")
+        lines.append(f"| {i} | {ch.hours:.1f} | `{command(ch, workers)}` |")
     lines += ["", "Resume after an interruption by re-running the same command: finished game ids",
               "are skipped and a truncated last JSONL line is repaired. When all chunks of a",
               "config are done, `python -m experiments.plots` etc. pick up `results/<config>/full`.", ""]
@@ -221,11 +241,13 @@ def run(pilot: Path, chunk_hours: float) -> tuple[str, list[Chunk]]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pilot", type=Path, default=Path("results/pilot_main/pilot"))
+    ap.add_argument("--pilot", type=Path, action="append",
+                    help="pilot run directory (repeat for several boards)")
     ap.add_argument("--out", type=Path, default=Path("results/runtime_estimate.md"))
     ap.add_argument("--chunk-hours", type=float, default=6.0)
     args = ap.parse_args()
-    text, _ = run(args.pilot, args.chunk_hours)
+    pilots = args.pilot or [Path("results/pilot_main/pilot2"), Path("results/pilot_11x11/pilot")]
+    text, _ = run(pilots, args.chunk_hours)
     args.out.write_text(text, encoding="utf-8")
     print(text)
 
