@@ -99,10 +99,12 @@ def block_rate(pos: Pos, iters: int, seeds: int) -> int:
     )
 
 
+@pytest.mark.slow
 def test_heuristic_mcts_blocks_opponent_threat_7x7() -> None:
     assert block_rate(MUST_BLOCK_74, 3000, 20) >= 19
 
 
+@pytest.mark.slow
 def test_heuristic_mcts_blocks_opponent_threat_9x9() -> None:
     # The wider 9x9 tree needs ~8000 simulations before the refutations of
     # non-blocking moves outweigh the averaging over their many replies.

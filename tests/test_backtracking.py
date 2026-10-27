@@ -36,6 +36,7 @@ def brute_value(cfg: GameConfig) -> int:
     return rec([0] * (n * n), 1)
 
 
+@pytest.mark.slow
 def test_known_values() -> None:
     assert solve(GameConfig(3, 3)).value == 0
     assert solve(GameConfig(4, 3)).value == 1  # first player wins 4x4, k=3
@@ -158,6 +159,7 @@ def test_without_early_stop_the_memo_free_tree_is_exactly_the_known_size() -> No
     assert r.value == 0 and r.nodes == 549946  # all positions of 3x3 tic-tac-toe
 
 
+@pytest.mark.slow
 def test_early_stop_never_changes_the_value_only_the_work() -> None:
     # (4,3) with plain memo and no early stop does not finish in minutes, so only
     # the symmetric memo is used there.

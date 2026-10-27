@@ -45,6 +45,7 @@ def test_finds_win_in_1_for_both_colours(cfg: HybridConfig, pos: Pos) -> None:
 
 @pytest.mark.parametrize("cfg", HYBRIDS, ids=IDS)
 @pytest.mark.parametrize("pos", [MUST_BLOCK_74, MUST_BLOCK_95], ids=lambda p: p.name)
+@pytest.mark.slow
 def test_blocks_immediate_loss(cfg: HybridConfig, pos: Pos) -> None:
     ok = sum(pick(cfg, pos.board(), 800, seed=s)[0] in pos.best for s in range(5))
     assert ok == 5
@@ -53,6 +54,7 @@ def test_blocks_immediate_loss(cfg: HybridConfig, pos: Pos) -> None:
 @pytest.mark.parametrize(
     "pos", [WIN_IN_3_A_74, WIN_IN_3_B_74, WIN_IN_3_A_95, WIN_IN_3_B_95], ids=lambda p: p.name
 )
+@pytest.mark.slow
 def test_mcts_ab_finds_forced_win_in_3(pos: Pos) -> None:
     for seed in range(3):
         move, agent = pick(MCTS_AB, pos.board(), 800, seed=seed)

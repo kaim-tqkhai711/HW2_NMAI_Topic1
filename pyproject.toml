@@ -1,6 +1,13 @@
+[project]
+name = "mnk-game-ai"
+version = "0.1.0"
+description = "Backtracking, alpha-beta and MCTS agents for generalized tic-tac-toe (CO3061 HW2)"
+requires-python = ">=3.10"
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = ["slow: test that takes more than 10 s (deselect with -m \"not slow\")"]
 
 [tool.mypy]
 strict = true

@@ -47,6 +47,7 @@ def test_flag_defaults_off_and_non_tac_presets_unchanged() -> None:
 
 @pytest.mark.parametrize("name", list(ALL_TAC))
 @pytest.mark.parametrize("pos", [MUST_BLOCK_74, MUST_BLOCK_95], ids=lambda p: p.name)
+@pytest.mark.slow
 def test_block_found_in_20_of_20_seeds_with_500_simulations(name: str, pos: Pos) -> None:
     cfg = ALL_TAC[name]
     seeds = 5 if name == "MCTS_AB_TAC" else 20  # AB-leaf simulations are ~50x slower

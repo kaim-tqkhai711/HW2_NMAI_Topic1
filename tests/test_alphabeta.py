@@ -51,6 +51,7 @@ def depth_for(pos: Pos) -> int:
 
 
 @pytest.mark.parametrize("pos", ALL_POSITIONS, ids=lambda p: p.name)
+@pytest.mark.slow
 def test_pruning_and_enhancements_do_not_change_the_minimax_value(pos: Pos) -> None:
     d = depth_for(pos)
     values = {

@@ -116,6 +116,7 @@ def tiny_results(tmp_path_factory: pytest.TempPathFactory) -> Path:
     return root
 
 
+@pytest.mark.slow
 def test_each_config_produces_all_run_files(tiny_results: Path) -> None:
     for name in NAMES:
         d = tiny_results / name / "t1"
@@ -136,6 +137,7 @@ def test_each_config_produces_all_run_files(tiny_results: Path) -> None:
                for r in rows)
 
 
+@pytest.mark.slow
 def test_resuming_a_run_directory_does_not_duplicate_games(tiny_results: Path) -> None:
     root = tiny_results
     before = (root / "scaling" / "t1" / "games.jsonl").read_text().count("\n")
@@ -143,6 +145,7 @@ def test_resuming_a_run_directory_does_not_duplicate_games(tiny_results: Path) -
     assert (root / "scaling" / "t1" / "games.jsonl").read_text().count("\n") == before
 
 
+@pytest.mark.slow
 def test_all_figures_are_written_as_pdf_and_png(tiny_results: Path, tmp_path: Path) -> None:
     done = plots.make_all(tiny_results, tmp_path / "figs")
     assert len(done) == len(plots.PLOTS) == 8
@@ -160,6 +163,7 @@ def test_missing_data_skips_figures_gracefully(tmp_path: Path) -> None:
     assert all(not v for v in plots.make_all(tmp_path, tmp_path / "f").values())
 
 
+@pytest.mark.slow
 def test_all_tables_are_booktabs_latex(tiny_results: Path, tmp_path: Path) -> None:
     files = tables.make_all(tiny_results, tmp_path / "t")
     assert sorted(p.name for p in files) == [
@@ -228,6 +232,7 @@ def test_failure_report_is_rendered(tmp_path: Path) -> None:
     assert empty.count("No example found") == 2
 
 
+@pytest.mark.slow
 def test_chunked_run_equals_unchunked_run(tmp_path: Path) -> None:
     cfg_path = _tiny("scaling", tmp_path)
     cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
