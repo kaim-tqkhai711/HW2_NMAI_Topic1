@@ -20,6 +20,10 @@ from tests.positions import (
     QUIET_95,
     WIN_IN_1_74,
     WIN_IN_1_95,
+    WIN_IN_3_A_74,
+    WIN_IN_3_A_95,
+    WIN_IN_3_B_74,
+    WIN_IN_3_B_95,
     Pos,
 )
 from tests.test_agents import state
@@ -218,3 +222,28 @@ def test_tree_is_not_reused_across_unrelated_positions_without_history() -> None
         assert agent.select_move(b, 60.0) in b.legal_moves()
         assert agent._root is not None and agent._root.N == 150
         assert state(b) == before
+
+
+WIN_IN_3 = [WIN_IN_3_A_74, WIN_IN_3_B_74, WIN_IN_3_A_95, WIN_IN_3_B_95]
+
+
+@pytest.mark.parametrize("pos", WIN_IN_3, ids=lambda p: p.name)
+@pytest.mark.parametrize("colour", ["X", "O"])
+@pytest.mark.parametrize("cfg", [MCTS_HEURISTIC, MCTS_RAVE], ids=["heuristic", "rave"])
+def test_mcts_finds_forced_win_in_3_for_both_colours(
+    cfg: MCTSConfig, colour: str, pos: Pos
+) -> None:
+    """The winning moves are hand-verified and re-derived by exhaustive search in
+    tests/test_positions.py; the O-to-move version is the colour-swapped board."""
+    b = pos.board() if colour == "X" else mirror(pos)
+    for seed in (0, 1):
+        agent = MCTSAgent(replace(cfg, max_iterations=4000, seed=seed))
+        assert agent.select_move(b, 600.0) in pos.best
+
+
+@pytest.mark.parametrize("pos", [WIN_IN_3_A_74, WIN_IN_3_B_74], ids=lambda p: p.name)
+@pytest.mark.parametrize("colour", ["X", "O"])
+def test_random_rollout_mcts_finds_forced_win_in_3_on_7x7(colour: str, pos: Pos) -> None:
+    b = pos.board() if colour == "X" else mirror(pos)
+    agent = MCTSAgent(replace(MCTS_RANDOM, max_iterations=20000, seed=0))
+    assert agent.select_move(b, 600.0) in pos.best
