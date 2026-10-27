@@ -356,3 +356,19 @@ def test_shipped_puzzle_file_is_complete_and_correct() -> None:
         assert cat == p.category and correct == set(p.correct)
     assert counts == {(n, c): 5 for n in (7, 9) for c in CATEGORIES}
     assert len({p.id for p in ps}) == 30
+
+
+def test_violations_are_attributed_to_the_slow_agent() -> None:
+    from dataclasses import replace
+
+    from experiments.run import summarise
+
+    cfg = GameConfig(3, 3)
+    rec = play_game(RandomAgent(0), _Sleeper(0.08), cfg, 0.04, 0, names=("random", "slow"))
+    assert rec.violations_x == 0 and rec.violations_o > 0
+    assert rec.violations == rec.violations_x + rec.violations_o
+    rows = {r["agent"]: r for r in summarise([rec], "time", None)}
+    assert rows["random"]["violations"] == 0
+    assert rows["slow"]["violations"] == rec.violations_o
+    old = replace(rec, violations_x=0, violations_o=0)
+    assert old.violations_by_side() == (0, rec.violations_o)

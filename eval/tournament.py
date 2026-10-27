@@ -30,7 +30,7 @@ from agents.mcts import MCTSAgent
 from agents.presets import AGENT_REGISTRY
 from agents.random_agent import RandomAgent
 from core.board import Board
-from core.rules import GameConfig, X
+from core.rules import GameConfig, O, X
 
 AgentFactory = Callable[[int], Agent]
 VIOLATION_FACTOR = 1.5
@@ -83,9 +83,11 @@ class GameRecord:
         moves: Agent moves after the opening.
         result: +1 X won, -1 O won, 0 draw.
         wall_time_s: Total wall time of the game.
-        violations: Moves that took more than 1.5 x the budget (time mode).
+        violations: Moves of either side that took more than 1.5 x the budget
+            (time mode); always ``violations_x + violations_o``.
         time_budget_s: Per-move budget (time mode) or 0 in node mode.
         budget_mode: "time" or "nodes".
+        violations_x / violations_o: Over-budget moves made by X / by O.
     """
 
     game_id: str
@@ -100,6 +102,22 @@ class GameRecord:
     violations: int
     time_budget_s: float
     budget_mode: str = "time"
+    violations_x: int = 0
+    violations_o: int = 0
+
+    def violations_by_side(self) -> tuple[int, int]:
+        """Over-budget moves of (X, O); recomputed from the moves for records
+        written before the per-side counters existed."""
+        if self.violations_x + self.violations_o == self.violations:
+            return self.violations_x, self.violations_o
+        vx = vo = 0
+        for i, m in enumerate(self.moves):
+            if self.budget_mode == "time" and m.wall_s > VIOLATION_FACTOR * self.time_budget_s:
+                if (len(self.opening) + i) % 2 == 0:
+                    vx += 1
+                else:
+                    vo += 1
+        return vx, vo
 
     def to_json(self) -> str:
         """Serialise to one JSON line (no trailing newline)."""
@@ -219,10 +237,11 @@ def play_game(
         board.make(m)
     nx, no = names or (agent_x.name, agent_o.name)
     moves: list[MoveRecord] = []
-    violations = 0
+    violations = {X: 0, O: 0}
     t_game = perf_counter()
     while not board.is_terminal:
-        agent = agent_x if board.to_move == X else agent_o
+        mover = board.to_move
+        agent = agent_x if mover == X else agent_o
         h, ply = board.hash, board.ply
         t0 = perf_counter()
         move = agent.select_move(board, time_budget_s)
@@ -233,7 +252,7 @@ def play_game(
             raise RuntimeError(f"{agent.name} returned illegal move {move}")
         st = agent.last_stats()
         if budget_mode == "time" and wall > VIOLATION_FACTOR * time_budget_s:
-            violations += 1
+            violations[mover] += 1
         r, c = board.to_rc(move)
         moves.append(
             MoveRecord(
@@ -257,9 +276,11 @@ def play_game(
         moves=moves,
         result=board.winner,
         wall_time_s=perf_counter() - t_game,
-        violations=violations,
+        violations=violations[X] + violations[O],
         time_budget_s=time_budget_s if budget_mode == "time" else 0.0,
         budget_mode=budget_mode,
+        violations_x=violations[X],
+        violations_o=violations[O],
     )
 
 

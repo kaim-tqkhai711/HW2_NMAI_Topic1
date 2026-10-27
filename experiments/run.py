@@ -196,8 +196,9 @@ def summarise(
                     w += res == 1
                     d += res == 0
                     lo += res == -1
+                vx, vo = r.violations_by_side()
+                viol += (vx if r.agent_x == agent else 0) + (vo if r.agent_o == agent else 0)
                 if agent in (r.agent_x, r.agent_o):
-                    viol += r.violations
                     nps += [m.nodes_per_s for i, m in enumerate(r.moves)
                             if (r.agent_x if i % 2 == _first_mover(r) else r.agent_o) == agent]
             o = outcome(int(w), int(d), int(lo))
