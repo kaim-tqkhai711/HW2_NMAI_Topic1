@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from experiments.plots import Row, latest_runs, read_csv
+from experiments.plots import Row, latest_runs, main_puzzles, main_summary, read_csv
 
 _ESCAPES = {"_": r"\_", "%": r"\%", "&": r"\&", "#": r"\#"}
 
@@ -106,9 +106,9 @@ def mcts_ablation_table(runs: dict[str, Path]) -> str | None:
 
 def elo_table(runs: dict[str, Path]) -> str | None:
     """Elo ranking of the main tournament, one block per board at the largest budget."""
-    if "main_tournament" not in runs:
+    summ = main_summary(runs)
+    if not summ:
         return None
-    summ = read_csv(runs["main_tournament"] / "summary.csv")
     parts = []
     for board in sorted({(int(r["n"]), int(r["k"])) for r in summ}):
         sub = [r for r in summ if (int(r["n"]), int(r["k"])) == board]
@@ -122,9 +122,9 @@ def elo_table(runs: dict[str, Path]) -> str | None:
 
 def puzzle_table(runs: dict[str, Path]) -> str | None:
     """Puzzle accuracy per agent and category."""
-    if "main_tournament" not in runs or not (runs["main_tournament"] / "puzzles.csv").exists():
+    rows = main_puzzles(runs)
+    if not rows:
         return None
-    rows = read_csv(runs["main_tournament"] / "puzzles.csv")
     acc: dict[str, dict[str, str]] = defaultdict(dict)
     for r in rows:
         acc[r["agent"]][r["category"]] = f"{float(r['accuracy']):.2f}"

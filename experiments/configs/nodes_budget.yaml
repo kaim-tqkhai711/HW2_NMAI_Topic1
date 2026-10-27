@@ -8,6 +8,7 @@ seed: 20260305
 boards: [[7, 4], [9, 5]]
 budget_mode: nodes
 budgets: [2000, 10000]          # nodes (alpha-beta) or simulations (MCTS) per move
+skip_cells: ["9x5@10000"]       # ~11 h; 9x5@2000 and both 7x4 cells are enough for the check
 games_per_pair: 100
 anchor: random
 agents:

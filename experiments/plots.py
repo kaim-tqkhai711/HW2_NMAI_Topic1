@@ -71,15 +71,34 @@ def _save(fig: Any, name: str, out_dir: Path) -> list[Path]:
     return paths
 
 
+MAIN_CONFIGS = ("main_7x7", "main_9x9", "main_11x11")
+
+
+def main_summary(runs: dict[str, Path]) -> list[Row]:
+    """summary.csv rows of every main-tournament config that has a run (Elo is per cell)."""
+    return [r for c in MAIN_CONFIGS if c in runs for r in read_csv(runs[c] / "summary.csv")]
+
+
+def main_records(runs: dict[str, Path]) -> list[GameRecord]:
+    """All games of the main-tournament configs that have a run."""
+    return [g for c in MAIN_CONFIGS if c in runs for g in read_records(runs[c] / "games.jsonl")]
+
+
+def main_puzzles(runs: dict[str, Path]) -> list[Row]:
+    """Puzzle accuracy rows (written by the config that ran with extras), or []."""
+    return [r for c in MAIN_CONFIGS if c in runs and (runs[c] / "puzzles.csv").exists()
+            for r in read_csv(runs[c] / "puzzles.csv")]
+
+
 def _boards(rows: list[Row]) -> list[tuple[int, int]]:
     return sorted({(int(r["n"]), int(r["k"])) for r in rows})
 
 
 def plot_elo_vs_budget(runs: dict[str, Path], out_dir: Path) -> list[Path]:
     """Elo of every agent against the per-move time budget, one panel per board."""
-    if "main_tournament" not in runs:
+    rows = main_summary(runs)
+    if not rows:
         return []
-    rows = read_csv(runs["main_tournament"] / "summary.csv")
     boards = _boards(rows)
     agents = sorted({r["agent"] for r in rows})
     sty = _style(agents)
@@ -221,9 +240,9 @@ def plot_ablation_mcts(runs: dict[str, Path], out_dir: Path) -> list[Path]:
 
 def plot_puzzles(runs: dict[str, Path], out_dir: Path) -> list[Path]:
     """Puzzle accuracy per agent and category."""
-    if "main_tournament" not in runs or not (runs["main_tournament"] / "puzzles.csv").exists():
+    rows = main_puzzles(runs)
+    if not rows:
         return []
-    rows = read_csv(runs["main_tournament"] / "puzzles.csv")
     agents = list(dict.fromkeys(r["agent"] for r in rows))
     cats = ["win_in_1", "block", "win_in_3"]
     fig, ax = plt.subplots(figsize=(9, 4))
@@ -257,9 +276,9 @@ def h2h_matrix(recs: list[GameRecord]) -> tuple[list[str], NDArray[np.float64]]:
 
 def plot_h2h_heatmap(runs: dict[str, Path], out_dir: Path) -> list[Path]:
     """Head-to-head score matrix on the first board, pooled over budgets."""
-    if "main_tournament" not in runs:
+    recs = main_records(runs)
+    if not recs:
         return []
-    recs = read_records(runs["main_tournament"] / "games.jsonl")
     n0 = min(r.config["n"] for r in recs)
     agents, m = h2h_matrix([r for r in recs if r.config["n"] == n0])
     fig, ax = plt.subplots(figsize=(7.5, 6.5))
@@ -287,9 +306,9 @@ def spearman(a: list[float], b: list[float]) -> float:
 
 def plot_budget_modes(runs: dict[str, Path], out_dir: Path) -> list[Path]:
     """Elo ranking under a time budget next to the ranking under a node budget."""
-    if "main_tournament" not in runs or "nodes_budget" not in runs:
+    t_rows = main_summary(runs)
+    if not t_rows or "nodes_budget" not in runs:
         return []
-    t_rows = read_csv(runs["main_tournament"] / "summary.csv")
     n_rows = read_csv(runs["nodes_budget"] / "summary.csv")
     board = _boards(t_rows)[0]
 

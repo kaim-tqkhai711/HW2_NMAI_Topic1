@@ -106,6 +106,13 @@ def apply_quick(cfg: dict[str, Any]) -> dict[str, Any]:
     return q
 
 
+def cell_list(cfg: dict[str, Any]) -> list[tuple[int, int, float]]:
+    """(n, k, budget) cells of a config, minus those named in ``skip_cells`` ("NxK@budget")."""
+    skip = {str(c) for c in cfg.get("skip_cells") or ()}
+    return [(int(n), int(k), b) for n, k in cfg["boards"] for b in cfg["budgets"]
+            if f"{n}x{k}@{b:g}" not in skip]
+
+
 def parse_agents(specs: list[Any]) -> dict[str, AgentFactory]:
     """Turn the ``agents:`` list into ``name -> picklable factory``.
 
@@ -126,13 +133,13 @@ def estimate(cfg: dict[str, Any], workers: int) -> tuple[int, float]:
     pairs = a * (a - 1) // 2
     names = [s if isinstance(s, str) else s["name"] for s in cfg["agents"]]
     search_frac = sum(1 for n in names if n != "random") / max(1, a)
-    games = pairs * cfg["games_per_pair"] * len(cfg["boards"]) * len(cfg["budgets"])
+    cells = cell_list(cfg)
+    games = pairs * cfg["games_per_pair"] * len(cells)
     seconds = 0.0
-    for n, _k in cfg["boards"]:
+    for n, _k, b in cells:
         plies = 3.5 * n
-        for b in cfg["budgets"]:
-            per_move = b if cfg["budget_mode"] == "time" else b / 3000.0
-            seconds += pairs * cfg["games_per_pair"] * plies * per_move * search_frac
+        per_move = b if cfg["budget_mode"] == "time" else b / 3000.0
+        seconds += pairs * cfg["games_per_pair"] * plies * per_move * search_frac
     return games, seconds / max(1, workers)
 
 
@@ -328,18 +335,17 @@ def run_experiment(
     factories = parse_agents(cfg["agents"])
     mode = cfg["budget_mode"]
     games_file = run_dir / "games.jsonl"
-    for n, k in cfg["boards"]:
-        for b in cfg["budgets"]:
-            if only is not None and f"{n}x{k}@{b:g}" not in only:
-                continue
-            print(f"  {n}x{n} k={k} budget={b} ({mode}) part {part[0]}/{part[1]}", flush=True)
-            round_robin(
-                factories, GameConfig(n, k), float(b) if mode == "time" else 0.0,
-                cfg["games_per_pair"], n_workers=workers, seed=cfg["seed"],
-                budget_mode=mode, out_path=games_file,
-                node_budget=int(b) if mode == "nodes" else 20000,
-                opening_part=part,
-            )
+    for n, k, b in cell_list(cfg):
+        if only is not None and f"{n}x{k}@{b:g}" not in only:
+            continue
+        print(f"  {n}x{n} k={k} budget={b} ({mode}) part {part[0]}/{part[1]}", flush=True)
+        round_robin(
+            factories, GameConfig(n, k), float(b) if mode == "time" else 0.0,
+            cfg["games_per_pair"], n_workers=workers, seed=cfg["seed"],
+            budget_mode=mode, out_path=games_file,
+            node_budget=int(b) if mode == "nodes" else 20000,
+            opening_part=part,
+        )
     write_summary(run_dir, cfg)
     if extras if extras is not None else (only is None and part == (1, 1)):
         if "puzzles" in cfg:

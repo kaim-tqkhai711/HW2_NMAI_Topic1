@@ -1,0 +1,18 @@
+# Pilot for runtime estimation on 11x11: the reduced roster plus mcts_ab_tac, 0.5 s, 10 games per pair.
+name: pilot_11x11
+seed: 20260398
+boards: [[11, 5]]
+budget_mode: time
+budgets: [0.5]
+games_per_pair: 10
+anchor: random
+agents:
+  - random
+  - backtracking_d2
+  - ab_order_id_tt
+  - ab_full
+  - mcts_random
+  - mcts_eval
+  - mcts_eval_tac
+  - mcts_heuristic_tac
+  - mcts_ab_tac

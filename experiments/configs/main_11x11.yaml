@@ -1,0 +1,18 @@
+# Main comparison, 11x11 k=5: reduced roster (the full 16 would take ~8 h), one time budget.
+# mcts_ab_tac is added only if the pilot shows it respects the budget after the clock fix.
+name: main_11x11
+seed: 20260312
+boards: [[11, 5]]
+budget_mode: time
+budgets: [0.5]                  # seconds per move
+games_per_pair: 100
+anchor: random
+agents:
+  - random
+  - backtracking_d2
+  - ab_order_id_tt
+  - ab_full
+  - mcts_random
+  - mcts_eval
+  - mcts_eval_tac
+  - mcts_heuristic_tac

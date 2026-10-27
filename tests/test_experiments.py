@@ -15,6 +15,7 @@ from experiments import failure_cases, plots, tables
 from experiments.run import (
     ConfigFactory,
     apply_quick,
+    cell_list,
     estimate,
     load_config,
     parse_agents,
@@ -22,7 +23,7 @@ from experiments.run import (
 )
 
 CONFIGS = Path(__file__).resolve().parent.parent / "experiments" / "configs"
-NAMES = ["main_tournament", "ablation_ab", "ablation_mcts", "scaling", "nodes_budget"]
+NAMES = ["main_7x7", "main_9x9", "main_11x11", "ablation_ab", "ablation_mcts", "scaling", "nodes_budget"]
 
 
 def test_all_shipped_configs_load_and_have_a_seed() -> None:
@@ -33,9 +34,17 @@ def test_all_shipped_configs_load_and_have_a_seed() -> None:
 
 
 def test_spec_contents_of_configs() -> None:
-    main = load_config(CONFIGS / "main_tournament.yaml")
-    assert main["boards"] == [[7, 4], [9, 5]] and main["budgets"] == [0.1, 0.5, 1.0]
-    assert main["games_per_pair"] == 100
+    m7 = load_config(CONFIGS / "main_7x7.yaml")
+    assert m7["boards"] == [[7, 4]] and m7["budgets"] == [0.5] and m7["games_per_pair"] == 40
+    m9 = load_config(CONFIGS / "main_9x9.yaml")
+    assert m9["boards"] == [[9, 5]] and m9["budgets"] == [0.1, 0.5, 1.0]
+    assert m9["games_per_pair"] == 100 and "puzzles" in m9
+    assert m7["agents"] == m9["agents"] and len(m9["agents"]) == 16
+    m11 = load_config(CONFIGS / "main_11x11.yaml")
+    assert m11["boards"] == [[11, 5]] and m11["budgets"] == [0.5] and m11["games_per_pair"] == 100
+    assert set(m11["agents"]) <= set(m9["agents"]) and len(m11["agents"]) >= 8
+    nb = load_config(CONFIGS / "nodes_budget.yaml")
+    assert cell_list(nb) == [(7, 4, 2000), (7, 4, 10000), (9, 5, 2000)]
     mcts = load_config(CONFIGS / "ablation_mcts.yaml")
     cs = sorted(a["params"]["c_uct"] for a in mcts["agents"] if isinstance(a, dict)
                 and "c_uct" in a["params"])
@@ -52,11 +61,11 @@ def test_quick_mode_shrinks_the_run() -> None:
 
 
 def test_estimate_is_positive_and_scales_with_games() -> None:
-    cfg = load_config(CONFIGS / "main_tournament.yaml")
+    cfg = load_config(CONFIGS / "main_9x9.yaml")
     a = len(cfg["agents"])
     pairs = a * (a - 1) // 2
     games, secs = estimate(cfg, 4)
-    assert games == pairs * 100 * 2 * 3 and secs > 0
+    assert games == pairs * 100 * 3 and secs > 0
     g2, s2 = estimate(apply_quick(cfg), 4)
     assert g2 == pairs * 4 and s2 < secs
     assert {"mcts_heuristic_tac", "mcts_rave_tac"} <= set(cfg["agents"])
@@ -76,7 +85,7 @@ def _tiny(name: str, tmp: Path) -> Path:
     cfg["boards"] = [[4, 3]]
     cfg["budgets"] = [0.02] if cfg["budget_mode"] == "time" else [40]
     cfg["games_per_pair"] = 2
-    keep = {"main_tournament": 4, "nodes_budget": 4, "ablation_ab": 3, "ablation_mcts": 3,
+    keep = {"main_7x7": 4, "main_9x9": 4, "main_11x11": 4, "nodes_budget": 4, "ablation_ab": 3, "ablation_mcts": 3,
             "scaling": 4}[name]
     cfg["agents"] = cfg["agents"][:keep]
     if name == "scaling":
@@ -114,7 +123,7 @@ def test_each_config_produces_all_run_files(tiny_results: Path) -> None:
             assert (d / f).stat().st_size > 0, (name, f)
         env = (d / "environment.txt").read_text()
         assert "python:" in env and "git_commit:" in env
-    main = tiny_results / "main_tournament" / "t1"
+    main = tiny_results / "main_9x9" / "t1"
     assert (main / "puzzles.csv").exists()
     abl = tiny_results / "ablation_ab" / "t1"
     assert (abl / "ab_depth.csv").exists() and (abl / "nodes_vs_depth.csv").exists()

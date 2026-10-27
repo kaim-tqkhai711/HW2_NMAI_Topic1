@@ -1,10 +1,10 @@
-# Main comparison: every agent against every other, time-controlled.
-name: main_tournament
+# Main comparison, 7x7 k=4: every agent against every other, one time budget.
+name: main_7x7
 seed: 20260301
-boards: [[7, 4], [9, 5]]
+boards: [[7, 4]]
 budget_mode: time
-budgets: [0.1, 0.5, 1.0]        # seconds per move
-games_per_pair: 100
+budgets: [0.5]                  # seconds per move
+games_per_pair: 40
 anchor: random
 agents:
   - random
@@ -23,7 +23,3 @@ agents:
   - mcts_rave_tac
   - mcts_eval_tac
   - mcts_ab_tac
-puzzles:
-  budget: 0.5                   # seconds per puzzle position
-quick:
-  puzzles: {budget: 0.1}

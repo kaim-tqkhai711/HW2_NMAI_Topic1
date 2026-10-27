@@ -28,7 +28,7 @@ from statistics import mean
 from typing import Any
 
 from eval.tournament import GameRecord, max_workers, read_records
-from experiments.run import load_config
+from experiments.run import cell_list, load_config
 
 CONFIG_DIR = Path("experiments/configs")
 BUDGET_BOUND = 0.85
@@ -36,9 +36,9 @@ OVERSHOOT = 1.2
 OVERHEAD_S = 0.05
 OPENING_PLIES = 3.0
 # Sequential extras that run after the games of a config (seconds, from the quick runs).
-EXTRAS_S = {"main_tournament": 16 * 30 * 0.5, "ablation_ab": 8 * 60.0}
-FULL_ORDER = ["ablation_ab", "ablation_mcts", "scaling", "main_tournament", "failure_mining",
-              "nodes_budget"]
+EXTRAS_S = {"main_9x9": 16 * 30 * 0.5, "ablation_ab": 8 * 60.0}
+FULL_ORDER = ["ablation_ab", "ablation_mcts", "scaling", "main_7x7", "main_9x9", "main_11x11",
+              "failure_mining", "nodes_budget"]
 
 
 @dataclass
@@ -196,11 +196,10 @@ def run(pilot: Path, chunk_hours: float) -> tuple[str, list[Chunk]]:
     per_cfg: dict[str, float] = {}
     for name in FULL_ORDER:
         cfg = load_config(CONFIG_DIR / f"{name}.yaml")
-        for n, k in cfg["boards"]:
-            for b in cfg["budgets"]:
-                secs = cell_seconds(cfg, n, float(b), prof, plies, b0) / (workers * eff)
-                cells.append((name, f"{n}x{k}@{b:g}", secs / 3600))
-                per_cfg[name] = per_cfg.get(name, 0.0) + secs / 3600
+        for n, k, b in cell_list(cfg):
+            secs = cell_seconds(cfg, n, float(b), prof, plies, b0) / (workers * eff)
+            cells.append((name, f"{n}x{k}@{b:g}", secs / 3600))
+            per_cfg[name] = per_cfg.get(name, 0.0) + secs / 3600
     extras_h = {k: v / 3600 for k, v in EXTRAS_S.items()}
     lines += ["", "## Per cell (hours, extrapolated)", "", "| config | cell | hours |", "|---|---|---|"]
     lines += [f"| {c} | {cell} | {h:.2f} |" for c, cell, h in cells]
