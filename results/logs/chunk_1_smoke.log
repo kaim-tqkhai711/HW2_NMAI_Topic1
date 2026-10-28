@@ -1,0 +1,46 @@
+[ablation_ab] 840 games, estimated wall time ~18.9 min on 10 workers (rough)
+  9x9 k=5 budget=0.5 (time) part 1/1
+AB_PLAIN        pos0 nodes= 1938677 t= 59.70s cut=60924 score=-100 move=48
+AB_PLAIN        pos1 nodes=  956136 t= 31.88s cut=31956 score=183 move=24
+AB_PLAIN        pos2 nodes=  299583 t=  8.84s cut=24721 score=11204 move=21
+AB_ORDER        pos0 nodes=   16340 t=  1.44s cut=5379 score=-100 move=48
+AB_ORDER        pos1 nodes=   19958 t=  1.84s cut=5170 score=183 move=24
+AB_ORDER        pos2 nodes=   14402 t=  1.27s cut=4952 score=11204 move=21
+AB_ORDER_ID     pos0 nodes=   21810 t=  2.00s cut=5588 score=-100 move=48
+AB_ORDER_ID     pos1 nodes=   25634 t=  2.08s cut=5446 score=183 move=24
+AB_ORDER_ID     pos2 nodes=   19574 t=  2.00s cut=5155 score=11204 move=21
+AB_ORDER_ID_TT  pos0 nodes=   19182 t=  1.48s cut=3304 score=-100 move=48
+AB_ORDER_ID_TT  pos1 nodes=   19418 t=  1.53s cut=4004 score=183 move=24
+AB_ORDER_ID_TT  pos2 nodes=   18276 t=  1.44s cut=3857 score=11204 move=21
+AB_FULL         pos0 nodes=    8371 t=  0.62s cut=1411 score=-100 move=48
+AB_FULL         pos1 nodes=    8948 t=  0.66s cut=1691 score=183 move=24
+AB_FULL         pos2 nodes=   11064 t=  0.83s cut=2138 score=11204 move=21
+  depth backtracking d=1: 42 nodes 0.0s timed_out=0
+  depth backtracking d=2: 1682 nodes 0.0s timed_out=0
+  depth backtracking d=3: 65642 nodes 0.5s timed_out=0
+  depth backtracking d=4: 2496122 nodes 17.1s timed_out=0
+  depth backtracking d=5: 8617984 nodes 60.0s timed_out=1
+  depth ab_plain d=1: 42 nodes 0.0s timed_out=0
+  depth ab_plain d=2: 952 nodes 0.0s timed_out=0
+  depth ab_plain d=3: 17191 nodes 0.4s timed_out=0
+  depth ab_plain d=4: 353859 nodes 10.3s timed_out=0
+  depth ab_plain d=5: 2132224 nodes 60.0s timed_out=1
+  depth ab_order d=1: 42 nodes 0.0s timed_out=0
+  depth ab_order d=2: 124 nodes 0.0s timed_out=0
+  depth ab_order d=3: 1957 nodes 0.1s timed_out=0
+  depth ab_order d=4: 1762 nodes 0.1s timed_out=0
+  depth ab_order d=5: 2392 nodes 0.1s timed_out=0
+  depth ab_order d=6: 10519 nodes 0.5s timed_out=0
+  depth ab_order_id_tt d=1: 42 nodes 0.0s timed_out=0
+  depth ab_order_id_tt d=2: 166 nodes 0.0s timed_out=0
+  depth ab_order_id_tt d=3: 2052 nodes 0.1s timed_out=0
+  depth ab_order_id_tt d=4: 3696 nodes 0.2s timed_out=0
+  depth ab_order_id_tt d=5: 3696 nodes 0.2s timed_out=0
+  depth ab_order_id_tt d=6: 3696 nodes 0.2s timed_out=0
+  depth ab_full d=1: 41 nodes 0.0s timed_out=0
+  depth ab_full d=2: 164 nodes 0.0s timed_out=0
+  depth ab_full d=3: 1893 nodes 0.1s timed_out=0
+  depth ab_full d=4: 3425 nodes 0.2s timed_out=0
+  depth ab_full d=5: 3425 nodes 0.2s timed_out=0
+  depth ab_full d=6: 3425 nodes 0.2s timed_out=0
+[ablation_ab] done -> results\ablation_ab\full
