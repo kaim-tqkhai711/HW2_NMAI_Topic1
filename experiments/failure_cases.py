@@ -2,7 +2,8 @@
 
 Run: python -m experiments.failure_cases [--results results] [--out results/failure_cases.md]
 
-Two kinds of cases are looked for in the games of the newest run of every config:
+Two kinds of cases are looked for in the games of the ``full`` run of every config
+(pilot and quick runs are skipped; pass ``--all-runs`` to include the newest run of each):
 
 (a) an MCTS-family agent lost although, earlier in the game, a forced win existed
     for it that it did not play (found by exhaustive search for wins in 1 and 3,
@@ -120,23 +121,36 @@ def _loser_name(rec: GameRecord) -> str:
     return rec.agent_x if rec.result == -1 else rec.agent_o
 
 
+def _spread(items: list[GameRecord], n: int) -> list[GameRecord]:
+    """At most ``n`` evenly spaced items, so a scan covers every board and budget."""
+    if n >= len(items):
+        return list(items)
+    return [items[i * len(items) // n] for i in range(n)]
+
+
+def _spread_cases(items: list[Case], n: int) -> list[Case]:
+    if n >= len(items):
+        return list(items)
+    return [items[i * len(items) // n] for i in range(n)]
+
+
 def mine(records: list[GameRecord], limit: int = MAX_EXAMPLES, scan: int = 400
          ) -> tuple[list[Case], list[Case]]:
     """Collect up to ``limit`` cases of each kind.
 
-    Only games lost by an MCTS-family (resp. alpha-beta) agent are scanned for
-    (a) (resp. (b)), at most ``scan`` of each.
+    Games lost by an MCTS-family agent are scanned for (a), an evenly spaced
+    sample of at most ``scan`` of them (the check is expensive). Every game lost
+    by an alpha-beta agent is scanned for (b) (cheap); the examples are spread
+    over the candidates found.
     """
     lost = [r for r in records if r.result != 0]
     a: list[Case] = []
-    b: list[Case] = []
-    for rec in [r for r in lost if _loser_name(r).startswith("mcts")][:scan]:
+    for rec in _spread([r for r in lost if _loser_name(r).startswith("mcts")], scan):
         if len(a) < limit and (c := mcts_missed_win(rec)):
             a.append(c)
-    for rec in [r for r in lost if _loser_name(r).startswith("ab")][:scan]:
-        if len(b) < limit and (c := ab_lost_from_winning_eval(rec)):
-            b.append(c)
-    return a, b
+    cands = [c for r in lost if _loser_name(r).startswith("ab")
+             if (c := ab_lost_from_winning_eval(r))]
+    return a, _spread_cases(cands, limit)
 
 
 def render(cases_a: list[Case], cases_b: list[Case]) -> str:
@@ -174,9 +188,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", type=Path, default=Path("results"))
     ap.add_argument("--out", type=Path, default=Path("results/failure_cases.md"))
+    ap.add_argument("--all-runs", action="store_true",
+                    help="also scan pilot/quick runs (default: only runs named 'full')")
     args = ap.parse_args()
     records: list[GameRecord] = []
     for run in latest_runs(args.results).values():
+        if run.name != "full" and not args.all_runs:
+            continue
         f = run / "games.jsonl"
         if f.exists():
             records += read_records(f)
