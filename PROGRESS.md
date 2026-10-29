@@ -13,7 +13,7 @@ commands/time estimates for the full experiment runs.
 | P4 MCTS | done | see "block test budget" below |
 | P5 hybrids | MCTS_EVAL, MCTS_AB done | MCTS_SOLVER and threat-space search **not built** (see below) |
 | P6 eval harness | done | |
-| P7 experiments | done | all configs ran with `--quick`; full runs NOT executed |
+| P7 experiments | chunks 1-6 done | full runs of ablation_ab, ablation_mcts, scaling, main_7x7, main_9x9 finished (`results/FULL_RUN_SUMMARY.md`); chunks 7-10 pending |
 | P8 GUI | done | headless-tested; visual checks listed below |
 
 ## Deviations and decisions worth knowing about
@@ -179,6 +179,25 @@ and an AB-leaf simulation costs 5-10 ms.
   pair, CI about +-200): the earlier ranking of the two hybrids was inflated by their extra thinking time.
   Caveat: about 2 minutes of `pytest` ran on the same machine during pilot2, so the few
   remaining 1.4-1.5x maxima (`ab_order` 7x7, `mcts_ab_tac`) may include load noise; they stay below 1 %.
+
+### Full runs, chunks 1-6 (29/10/2026)
+
+Details, CIs and tables: `results/FULL_RUN_SUMMARY.md`. All chunks exit 0, 44,160 games, no missing games or fields.
+
+* **Gate failed at 9x5@0.1 s**: 13 of 15 search agents exceed 1.5x budget on 1.2-6.8 % of moves (worst `mcts_ab_tac`
+  6.79 %); the overshoot is an absolute ~56-77 ms for every agent (the agent's own clock agrees). 7x4@0.5, 9x5@0.5
+  and 9x5@1.0 pass (worst 0.03 %). The `mcts_ab*` clock fix holds at 0.5 s and 1 s. Cause not isolated (scheduling
+  under 10 workers on a hybrid CPU vs coarse clock checks); decision on the 0.1 s cell left to the owner.
+* `experiments/failure_cases.py` was scanning non-FULL runs (pilot, quick; 3,264 of 47,424 games) and capped the scan
+  at the first 400 lost games in file order (which is why only 2 AB cases were found). Now `full` runs only
+  (`--all-runs` to override) and an evenly spread scan; 3 MCTS + 3 AB cases from 44,160 FULL games. All 38 AB candidates
+  in the data are `ab_plain`.
+* `results/figures/budget_modes.*` still comes from the 264-game quick `nodes_budget` run; it is replaced after chunk 9.
+* Findings to keep in the report: only move ordering has a resolvable strength effect among the AB ablations (ID, TT, radius
+  indistinguishable at 100 games per cell; benefit of ID/TT does not grow with budget); RAVE helps on 9x9 (0.72 vs plain heuristic)
+  but hurts on 7x7 (0.325); TAC helps most at short budgets; AB-vs-MCTS gap shrinks as budget grows and widens with board size.
+* nodes/s per move on 9x9@0.5 has no clear two-peak distribution; `ab_order_id_tt` shows a slow shoulder at 0.5-0.6x the main
+  peak, consistent with but not proof of P/E-core effects (`results/figures/nps_hist_9x9_0.5.png`).
 
 ## Interface proposals
 

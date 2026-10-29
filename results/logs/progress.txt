@@ -1,0 +1,22 @@
+2026-10-29 02:55:13  power settings before: standby-timeout-ac=0 min, hibernate-timeout-ac=0 min
+2026-10-29 02:55:13  chunk 2 (ablation_mcts): free RAM 3.05 GB
+2026-10-29 02:55:13  chunk 2 (ablation_mcts) START attempt 1
+2026-10-29 03:14:21  chunk 2 (ablation_mcts) END attempt 1 exit=0
+2026-10-29 03:14:21  chunk 3 (scaling): free RAM 3.61 GB
+2026-10-29 03:14:21  chunk 3 (scaling) START attempt 1
+2026-10-29 03:19:45  chunk 3 (scaling) END attempt 1 exit=0
+2026-10-29 03:19:45  chunk 4 (main_7x7): free RAM 2.45 GB
+2026-10-29 03:19:45  chunk 4 (main_7x7) START attempt 1
+2026-10-29 03:35:15  chunk 4 (main_7x7) END attempt 1 exit=0
+2026-10-29 03:35:16  chunk 5 (main_9x9 0.1+0.5): free RAM 4.14 GB
+2026-10-29 03:35:16  chunk 5 (main_9x9 0.1+0.5) START attempt 1
+2026-10-29 06:05:38  chunk 5 (main_9x9 0.1+0.5) END attempt 1 exit=0
+2026-10-29 06:05:39  chunk 6 (main_9x9 1.0): free RAM 5.01 GB
+2026-10-29 06:05:39  chunk 6 (main_9x9 1.0) START attempt 1
+2026-10-29 09:36:07  chunk 6 (main_9x9 1.0) END attempt 1 exit=0
+2026-10-29 09:36:07  post-processing: experiments.plots START
+2026-10-29 09:36:18  post-processing: experiments.plots END exit=0
+2026-10-29 09:36:18  post-processing: experiments.tables START
+2026-10-29 09:36:19  post-processing: experiments.tables END exit=0
+2026-10-29 09:36:19  post-processing: experiments.failure_cases START
+2026-10-29 09:36:26  post-processing: experiments.failure_cases END exit=0

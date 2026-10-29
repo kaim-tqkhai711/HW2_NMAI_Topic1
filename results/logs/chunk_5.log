@@ -1,0 +1,4 @@
+[main_9x9] 36000 games, estimated wall time ~945.0 min on 10 workers (rough)
+  9x9 k=5 budget=0.1 (time) part 1/1
+  9x9 k=5 budget=0.5 (time) part 1/1
+[main_9x9] done -> results\main_9x9\full

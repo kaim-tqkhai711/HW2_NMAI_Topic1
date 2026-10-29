@@ -1,0 +1,5 @@
+[scaling] 720 games, estimated wall time ~14.2 min on 10 workers (rough)
+  7x7 k=4 budget=0.5 (time) part 1/1
+  9x9 k=5 budget=0.5 (time) part 1/1
+  11x11 k=5 budget=0.5 (time) part 1/1
+[scaling] done -> results\scaling\full

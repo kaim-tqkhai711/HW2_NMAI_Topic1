@@ -1,0 +1,27 @@
+name: main_7x7
+seed: 20260301
+boards:
+- - 7
+  - 4
+budget_mode: time
+budgets:
+- 0.5
+games_per_pair: 40
+anchor: random
+agents:
+- random
+- backtracking_d2
+- ab_plain
+- ab_order
+- ab_order_id_tt
+- ab_full
+- ab_full_timed
+- mcts_random
+- mcts_heuristic
+- mcts_rave
+- mcts_eval
+- mcts_ab
+- mcts_heuristic_tac
+- mcts_rave_tac
+- mcts_eval_tac
+- mcts_ab_tac

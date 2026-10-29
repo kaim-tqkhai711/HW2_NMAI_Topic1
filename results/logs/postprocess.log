@@ -1,0 +1,14 @@
+plot_elo_vs_budget: wrote elo_vs_budget.pdf, elo_vs_budget.png
+plot_nodes_vs_depth: wrote nodes_vs_depth.pdf, nodes_vs_depth.png
+plot_scaling: wrote scaling_winrate.pdf, scaling_winrate.png
+plot_ablation_ab: wrote ablation_ab.pdf, ablation_ab.png
+plot_ablation_mcts: wrote ablation_mcts.pdf, ablation_mcts.png
+plot_puzzles: wrote puzzle_accuracy.pdf, puzzle_accuracy.png
+plot_h2h_heatmap: wrote h2h_heatmap.pdf, h2h_heatmap.png
+plot_budget_modes: wrote budget_modes.pdf, budget_modes.png
+solve: wrote results\tables\solve.tex
+ab_ablation: wrote results\tables\ab_ablation.tex
+mcts_ablation: wrote results\tables\mcts_ablation.tex
+elo_ranking: wrote results\tables\elo_ranking.tex
+puzzle_accuracy: wrote results\tables\puzzle_accuracy.tex
+47424 games scanned: 3 MCTS cases, 2 AB cases -> results\failure_cases.md

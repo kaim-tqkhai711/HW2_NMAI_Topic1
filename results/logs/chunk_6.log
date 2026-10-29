@@ -1,0 +1,19 @@
+[main_9x9] 36000 games, estimated wall time ~945.0 min on 10 workers (rough)
+  9x9 k=5 budget=1.0 (time) part 1/1
+  puzzles random: 0.00
+  puzzles backtracking_d2: 0.67
+  puzzles ab_plain: 0.10
+  puzzles ab_order: 1.00
+  puzzles ab_order_id_tt: 1.00
+  puzzles ab_full: 1.00
+  puzzles ab_full_timed: 1.00
+  puzzles mcts_random: 0.87
+  puzzles mcts_heuristic: 0.87
+  puzzles mcts_rave: 0.87
+  puzzles mcts_eval: 0.87
+  puzzles mcts_ab: 0.83
+  puzzles mcts_heuristic_tac: 1.00
+  puzzles mcts_rave_tac: 1.00
+  puzzles mcts_eval_tac: 1.00
+  puzzles mcts_ab_tac: 1.00
+[main_9x9] done -> results\main_9x9\full

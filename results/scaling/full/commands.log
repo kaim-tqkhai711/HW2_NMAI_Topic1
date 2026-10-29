@@ -1,0 +1,1 @@
+2026-10-29T03:14:22 D:\HCMUT\Năm 4\NMAI\HW2_NMAI_Topic1\experiments\run.py --config experiments/configs/scaling.yaml --run-dir results/scaling/full --only 7x4@0.5 9x5@0.5 11x5@0.5 --workers 10
