@@ -198,6 +198,15 @@ Details, CIs and tables: `results/FULL_RUN_SUMMARY.md`. All chunks exit 0, 44,16
   but hurts on 7x7 (0.325); TAC helps most at short budgets; AB-vs-MCTS gap shrinks as budget grows and widens with board size.
 * nodes/s per move on 9x9@0.5 has no clear two-peak distribution; `ab_order_id_tt` shows a slow shoulder at 0.5-0.6x the main
   peak, consistent with but not proof of P/E-core effects (`results/figures/nps_hist_9x9_0.5.png`).
+* `--dry-run` now respects `--only` and prints a calibrated estimate (`calibrated_hours=`) next to the rough one.
+  Calibration (`experiments/estimate_runtime.py`, table in `results/runtime_estimate.md`): actual / predicted summed game wall
+  time is 1.20 at 0.1 s, 0.90 at 0.5 s and 1 s (ablation_mcts 0.92, main_7x7 0.93; ablation_ab 1.36 because AB-only rosters play
+  longer games, not modelled); parallel efficiency 0.98-0.99. With it chunks 2-6 are predicted within 3 % of the measured elapsed
+  time (e.g. chunk 6: 3.57 h vs 3.51 h). Node-budget cells are not calibrated (no full run yet).
+* Run scripts append to `progress.txt` through a `FileShare.ReadWrite` stream with retries (a `Get-Content -Wait` reader cannot
+  block it; the original failure could not be reproduced with `Add-Content` in a quick test).
+* `scripts/run_chunks_7_10.ps1` (main_11x11, failure_mining, nodes_budget 7x4 and 9x5@2000, then plots/tables/failure_cases):
+  estimated 0.55 + 0.01 + 5.40 + 3.90 = 9.86 h, under the 12 h limit; if it is exceeded, drop chunk 10 first.
 
 ## Interface proposals
 

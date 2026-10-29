@@ -113,6 +113,11 @@ def cell_list(cfg: dict[str, Any]) -> list[tuple[int, int, float]]:
             if f"{n}x{k}@{b:g}" not in skip]
 
 
+def selected_cells(cfg: dict[str, Any], only: list[str] | None = None) -> list[tuple[int, int, float]]:
+    """`cell_list` restricted to the ``"NxK@budget"`` names in ``only`` (all when None)."""
+    return [c for c in cell_list(cfg) if only is None or f"{c[0]}x{c[1]}@{c[2]:g}" in only]
+
+
 def parse_agents(specs: list[Any]) -> dict[str, AgentFactory]:
     """Turn the ``agents:`` list into ``name -> picklable factory``.
 
@@ -127,13 +132,18 @@ def parse_agents(specs: list[Any]) -> dict[str, AgentFactory]:
     return out
 
 
-def estimate(cfg: dict[str, Any], workers: int) -> tuple[int, float]:
-    """(number of games, rough wall seconds) of a tournament config."""
+def estimate(cfg: dict[str, Any], workers: int,
+             only: list[str] | None = None) -> tuple[int, float]:
+    """(number of games, rough wall seconds) of a tournament config.
+
+    Only the cells named in ``only`` (``"NxK@budget"``) count; all cells when None. The seconds
+    come from a crude plies-per-game model; `calibrated_hours` is the calibrated one.
+    """
     a = len(cfg["agents"])
     pairs = a * (a - 1) // 2
     names = [s if isinstance(s, str) else s["name"] for s in cfg["agents"]]
     search_frac = sum(1 for n in names if n != "random") / max(1, a)
-    cells = cell_list(cfg)
+    cells = selected_cells(cfg, only)
     games = pairs * cfg["games_per_pair"] * len(cells)
     seconds = 0.0
     for n, _k, b in cells:
@@ -141,6 +151,19 @@ def estimate(cfg: dict[str, Any], workers: int) -> tuple[int, float]:
         per_move = b if cfg["budget_mode"] == "time" else b / 3000.0
         seconds += pairs * cfg["games_per_pair"] * plies * per_move * search_frac
     return games, seconds / max(1, workers)
+
+
+def calibrated_hours(cfg: dict[str, Any], workers: int, only: list[str] | None = None) -> float | None:
+    """Wall hours of the selected cells from the pilot-profile model corrected on the full runs.
+
+    None when the pilot data it is built from are not available.
+    """
+    from experiments.estimate_runtime import estimated_hours
+
+    try:
+        return estimated_hours(cfg, selected_cells(cfg, only), workers)
+    except (OSError, KeyError, ValueError):
+        return None
 
 
 def git_info() -> str:
@@ -317,10 +340,19 @@ def run_experiment(
         cfg = apply_quick(cfg)
     cfg.pop("quick", None)
     workers = min(n_workers or max_workers(), max_workers())
-    games, secs = estimate(cfg, workers)
-    print(f"[{cfg['name']}] {games} games, estimated wall time ~{secs / 60:.1f} min "
-          f"on {workers} workers (rough)", flush=True)
+    games, secs = estimate(cfg, workers, only)
+    cells = selected_cells(cfg, only)
+    print(f"[{cfg['name']}] {games} games in {len(cells)} cell(s) "
+          f"({', '.join(f'{n}x{k}@{b:g}' for n, k, b in cells) or 'none'}), rough estimate "
+          f"~{secs / 60:.1f} min on {workers} workers", flush=True)
     if dry_run:
+        hours = calibrated_hours(cfg, workers, only)
+        if hours is None:
+            print(f"[{cfg['name']}] calibrated estimate unavailable (pilot data missing)", flush=True)
+        else:
+            note = "; node-budget cells are not calibrated" if cfg["budget_mode"] == "nodes" else ""
+            print(f"[{cfg['name']}] calibrated_hours={hours:.2f} ({hours * 60:.0f} min on "
+                  f"{workers} workers{note})", flush=True)
         return None
     if run_dir is None:
         stamp = timestamp or datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -335,9 +367,7 @@ def run_experiment(
     factories = parse_agents(cfg["agents"])
     mode = cfg["budget_mode"]
     games_file = run_dir / "games.jsonl"
-    for n, k, b in cell_list(cfg):
-        if only is not None and f"{n}x{k}@{b:g}" not in only:
-            continue
+    for n, k, b in selected_cells(cfg, only):
         print(f"  {n}x{n} k={k} budget={b} ({mode}) part {part[0]}/{part[1]}", flush=True)
         round_robin(
             factories, GameConfig(n, k), float(b) if mode == "time" else 0.0,

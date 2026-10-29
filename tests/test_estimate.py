@@ -1,10 +1,17 @@
+from pathlib import Path
+
 from experiments.estimate_runtime import (
     AgentProfile,
     agent_key,
+    calibration_factor,
+    chunk_times,
     command,
     move_time,
     plan_chunks,
 )
+from experiments.run import estimate, load_config, selected_cells
+
+CONFIGS = Path("experiments/configs")
 
 
 def test_budget_bound_agents_scale_with_budget_fixed_cost_agents_do_not() -> None:
@@ -44,3 +51,36 @@ def test_command_is_resumable_and_targets_a_fixed_run_dir() -> None:
     assert "--run-dir results/main_tournament/full" in cmd
     assert "--only 9x5@1" in cmd and "--part 2/3" in cmd
     assert "--extras" not in cmd
+
+
+def test_calibration_factor_hits_its_knots_clamps_and_interpolates_in_log_budget() -> None:
+    assert calibration_factor("time", 0.1) == 1.20
+    assert calibration_factor("time", 0.5) == 0.90
+    assert calibration_factor("time", 1.0) == 0.90
+    assert calibration_factor("time", 0.01) == 1.20 and calibration_factor("time", 5.0) == 0.90
+    assert abs(calibration_factor("time", (0.1 * 0.5) ** 0.5) - 1.05) < 1e-9  # geometric midpoint
+    assert calibration_factor("nodes", 2000) == 1.0
+
+
+def test_estimate_counts_only_the_selected_cells() -> None:
+    cfg = load_config(CONFIGS / "main_9x9.yaml")
+    pairs = 16 * 15 // 2
+    assert estimate(cfg, 10)[0] == pairs * 100 * 3
+    games, secs = estimate(cfg, 10, ["9x5@1"])
+    assert games == pairs * 100 and selected_cells(cfg, ["9x5@1"]) == [(9, 5, 1.0)]
+    assert estimate(cfg, 10, ["9x5@0.1", "9x5@0.5"])[0] == pairs * 100 * 2
+    assert estimate(cfg, 10, ["7x4@0.5"]) == (0, 0.0)
+    assert secs > 0
+
+
+def test_chunk_times_pairs_each_start_with_its_end(tmp_path: Path) -> None:
+    log = tmp_path / "progress.txt"
+    lines = [
+        "2026-10-29 02:55:13  chunk 2 (a) START attempt 1",
+        "2026-10-29 03:14:21  chunk 2 (a) END attempt 1 exit=0",
+        "2026-10-29 03:14:21  chunk 3 (b): free RAM 3.61 GB",
+        "2026-10-29 03:14:21  chunk 3 (b) START attempt 1",
+        "2026-10-29 03:19:45  chunk 3 (b) END attempt 1 exit=0",
+    ]
+    log.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert chunk_times(log) == {2: 19 * 60 + 8, 3: 5 * 60 + 24}

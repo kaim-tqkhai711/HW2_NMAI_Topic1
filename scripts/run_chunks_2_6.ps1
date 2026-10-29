@@ -9,7 +9,7 @@ $MaxWaits = 10
 
 Set-Location (Split-Path -Parent $PSScriptRoot)
 $LogDir = "results/logs"
-$Progress = Join-Path $LogDir "progress.txt"
+$Progress = Join-Path (Get-Location).Path "results\logs\progress.txt"   # absolute: .NET does not follow Set-Location
 
 $Chunks = @(
     @{ N = 2; Name = "ablation_mcts"; Args = "--config experiments/configs/ablation_mcts.yaml --run-dir results/ablation_mcts/full --only 9x5@0.5" },
@@ -20,10 +20,25 @@ $Chunks = @(
 )
 $Post = @("experiments.plots", "experiments.tables", "experiments.failure_cases")
 
+function Append-SharedLine([string]$Path, [string]$Line) {
+    # FileShare.ReadWrite: a reader such as `Get-Content -Wait` must not block the log; retry, never abort the run
+    for ($i = 1; $i -le 5; $i++) {
+        try {
+            $fs = [System.IO.File]::Open($Path, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+            try {
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($Line + [Environment]::NewLine)
+                $fs.Write($bytes, 0, $bytes.Length)
+            } finally { $fs.Dispose() }
+            return
+        } catch [System.IO.IOException] { Start-Sleep -Milliseconds (200 * $i) }
+    }
+    Write-Host "(could not append to $Path after 5 tries)"
+}
+
 function Write-Progress-Line([string]$Text) {
     $line = "{0}  {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Text
     Write-Host $line
-    if (-not $DryRun) { Add-Content -Path $Progress -Value $line }
+    if (-not $DryRun) { Append-SharedLine $Progress $line }
 }
 
 function Get-FreeGB { [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 2) }

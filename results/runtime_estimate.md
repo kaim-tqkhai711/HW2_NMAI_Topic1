@@ -65,21 +65,23 @@ Model check on `results\pilot_main\pilot2` (in-sample, so it only tests the plum
 
 Model check on `results\pilot_11x11\pilot` (in-sample, so it only tests the plumbing): predicted 3.7 min vs measured 3.5 min.
 
-## Per cell (hours)
+## Per cell (hours, calibrated)
+
+Pilot-profile model times `calibration_factor` (1.20 at 0.1 s, 0.90 at 0.5 s and 1 s, 1.0 for node budgets: not yet measured).
 
 | config | cell | hours |
 |---|---|---|
-| ablation_ab | 9x5@0.5 | 0.13 |
-| ablation_mcts | 9x5@0.5 | 0.35 |
+| ablation_ab | 9x5@0.5 | 0.12 |
+| ablation_mcts | 9x5@0.5 | 0.31 |
 | scaling | 7x4@0.5 | 0.01 |
-| scaling | 9x5@0.5 | 0.04 |
-| scaling | 11x5@0.5 | 0.04 |
-| main_7x7 | 7x4@0.5 | 0.28 |
-| main_9x9 | 9x5@0.1 | 0.48 |
-| main_9x9 | 9x5@0.5 | 2.16 |
-| main_9x9 | 9x5@1 | 3.89 |
-| main_11x11 | 11x5@0.5 | 0.61 |
-| failure_mining | 7x4@0.1 | 0.00 |
+| scaling | 9x5@0.5 | 0.03 |
+| scaling | 11x5@0.5 | 0.03 |
+| main_7x7 | 7x4@0.5 | 0.25 |
+| main_9x9 | 9x5@0.1 | 0.58 |
+| main_9x9 | 9x5@0.5 | 1.94 |
+| main_9x9 | 9x5@1 | 3.50 |
+| main_11x11 | 11x5@0.5 | 0.55 |
+| failure_mining | 7x4@0.1 | 0.01 |
 | nodes_budget | 7x4@2000 | 0.91 |
 | nodes_budget | 7x4@10000 | 4.49 |
 | nodes_budget | 9x5@2000 | 3.90 |
@@ -88,15 +90,39 @@ Model check on `results\pilot_11x11\pilot` (in-sample, so it only tests the plum
 
 | config | games hours | + extras | total |
 |---|---|---|---|
-| ablation_ab | 0.13 | 0.13 | 0.27 |
-| ablation_mcts | 0.35 | 0.00 | 0.35 |
-| scaling | 0.09 | 0.00 | 0.09 |
-| main_7x7 | 0.28 | 0.00 | 0.28 |
-| main_9x9 | 6.54 | 0.07 | 6.60 |
-| main_11x11 | 0.61 | 0.00 | 0.61 |
-| failure_mining | 0.00 | 0.00 | 0.00 |
+| ablation_ab | 0.12 | 0.13 | 0.25 |
+| ablation_mcts | 0.31 | 0.00 | 0.31 |
+| scaling | 0.08 | 0.00 | 0.08 |
+| main_7x7 | 0.25 | 0.00 | 0.25 |
+| main_9x9 | 6.03 | 0.07 | 6.10 |
+| main_11x11 | 0.55 | 0.00 | 0.55 |
+| failure_mining | 0.01 | 0.00 | 0.01 |
 | nodes_budget | 9.30 | 0.00 | 9.30 |
-| **all** | | | **17.5** |
+| **all** | | | **16.8** |
+
+## Calibration on the full runs
+
+| config | cell | games | predicted CPU h | actual CPU h | actual / predicted |
+|---|---|---|---|---|---|
+| ablation_ab | 9x5@0.5 | 840 | 1.29 | 1.76 | 1.36 |
+| ablation_mcts | 9x5@0.5 | 1800 | 3.42 | 3.16 | 0.92 |
+| scaling | 7x4@0.5 | 240 | 0.12 | 0.11 | 0.87 |
+| scaling | 9x5@0.5 | 240 | 0.37 | 0.28 | 0.77 |
+| scaling | 11x5@0.5 | 240 | 0.37 | 0.37 | 0.99 |
+| main_7x7 | 7x4@0.5 | 4800 | 2.73 | 2.54 | 0.93 |
+| main_9x9 | 9x5@0.1 | 12000 | 4.76 | 5.72 | 1.20 |
+| main_9x9 | 9x5@0.5 | 12000 | 21.20 | 19.08 | 0.90 |
+| main_9x9 | 9x5@1 | 12000 | 38.22 | 34.42 | 0.90 |
+
+Elapsed time per chunk (progress log):
+
+| chunk | elapsed min |
+|---|---|
+| 2 | 19.1 |
+| 3 | 5.4 |
+| 4 | 15.5 |
+| 5 | 150.4 |
+| 6 | 210.5 |
 
 ## Chunks (each <= 6 h, run in this order; all resumable)
 
@@ -105,10 +131,10 @@ Model check on `results\pilot_11x11\pilot` (in-sample, so it only tests the plum
 | 1 | 0.3 | `python -m experiments.run --config experiments/configs/ablation_ab.yaml --run-dir results/ablation_ab/full --only 9x5@0.5 --workers 10 --extras` |
 | 2 | 0.3 | `python -m experiments.run --config experiments/configs/ablation_mcts.yaml --run-dir results/ablation_mcts/full --only 9x5@0.5 --workers 10` |
 | 3 | 0.1 | `python -m experiments.run --config experiments/configs/scaling.yaml --run-dir results/scaling/full --only 7x4@0.5 9x5@0.5 11x5@0.5 --workers 10` |
-| 4 | 0.3 | `python -m experiments.run --config experiments/configs/main_7x7.yaml --run-dir results/main_7x7/full --only 7x4@0.5 --workers 10` |
-| 5 | 2.6 | `python -m experiments.run --config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full --only 9x5@0.1 9x5@0.5 --workers 10` |
-| 6 | 4.0 | `python -m experiments.run --config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full --only 9x5@1 --workers 10 --extras` |
-| 7 | 0.6 | `python -m experiments.run --config experiments/configs/main_11x11.yaml --run-dir results/main_11x11/full --only 11x5@0.5 --workers 10` |
+| 4 | 0.2 | `python -m experiments.run --config experiments/configs/main_7x7.yaml --run-dir results/main_7x7/full --only 7x4@0.5 --workers 10` |
+| 5 | 2.5 | `python -m experiments.run --config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full --only 9x5@0.1 9x5@0.5 --workers 10` |
+| 6 | 3.6 | `python -m experiments.run --config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full --only 9x5@1 --workers 10 --extras` |
+| 7 | 0.5 | `python -m experiments.run --config experiments/configs/main_11x11.yaml --run-dir results/main_11x11/full --only 11x5@0.5 --workers 10` |
 | 8 | 0.0 | `python -m experiments.run --config experiments/configs/failure_mining.yaml --run-dir results/failure_mining/full --only 7x4@0.1 --workers 10` |
 | 9 | 5.4 | `python -m experiments.run --config experiments/configs/nodes_budget.yaml --run-dir results/nodes_budget/full --only 7x4@2000 7x4@10000 --workers 10` |
 | 10 | 3.9 | `python -m experiments.run --config experiments/configs/nodes_budget.yaml --run-dir results/nodes_budget/full --only 9x5@2000 --workers 10` |

@@ -16,14 +16,21 @@ Model (all numbers measured in the pilot, nothing assumed except the scaling rul
 
 A game costs ``(plies - opening) / 2 * (t_x + t_o) + overhead``; a cell costs
 games x that / (workers x efficiency).
+
+Calibration against chunks 1-6 of the full runs (see ``calibration_report``): the cell
+cost of the model is multiplied by ``calibration_factor`` (actual / predicted summed game
+wall time, per time budget).
 """
 from __future__ import annotations
 
 import argparse
+import re
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+from functools import lru_cache
 from itertools import combinations
-from math import ceil
+from math import ceil, log
 from pathlib import Path
 from statistics import mean
 from typing import Any
@@ -38,6 +45,16 @@ OVERHEAD_S = 0.05
 OPENING_PLIES = 3.0
 # Sequential extras that run after the games of a config (seconds, from the quick runs).
 EXTRAS_S = {"main_9x9": 16 * 30 * 0.5, "ablation_ab": 8 * 60.0}
+# Actual / predicted summed game wall time per time budget, measured on the full runs of
+# chunks 2-6 (main_9x9 0.1 s 1.20, 0.5 s 0.90, 1 s 0.90; ablation_mcts 0.93, main_7x7 0.93, scaling
+# 0.77-0.99). 0.1 s cells run long (about 60 ms of clock overshoot per search move), 0.5 s and
+# 1 s cells short. Node-budget cells have no full run yet: left at 1.0 (a 264-game quick run
+# gave 0.71, too small a sample to use). Rosters made only of alpha-beta agents play longer games than
+# the pilot's mixed roster (ablation_ab: 1.36); that is not modelled.
+TIME_CAL = ((0.1, 1.20), (0.5, 0.90), (1.0, 0.90))
+NODES_CAL = 1.0
+# Measured parallel efficiency of chunks of 15 min or more: 0.98-0.99 (pilot: 0.98).
+PILOTS = (Path("results/pilot_main/pilot2"), Path("results/pilot_11x11/pilot"))
 FULL_ORDER = ["ablation_ab", "ablation_mcts", "scaling", "main_7x7", "main_9x9", "main_11x11",
               "failure_mining", "nodes_budget"]
 
@@ -87,6 +104,18 @@ def move_time(p: AgentProfile, mode: str, budget: float, b0: float) -> float:
     return min(p.per_move_s, budget)
 
 
+def calibration_factor(mode: str, budget: float) -> float:
+    """Correction of a cell's predicted CPU seconds (log-linear in the budget, clamped)."""
+    if mode == "nodes":
+        return NODES_CAL
+    if budget <= TIME_CAL[0][0]:
+        return TIME_CAL[0][1]
+    for (b0, f0), (b1, f1) in zip(TIME_CAL, TIME_CAL[1:]):
+        if budget <= b1:
+            return f0 + (f1 - f0) * (log(budget) - log(b0)) / (log(b1) - log(b0))
+    return TIME_CAL[-1][1]
+
+
 # Agents absent from the pilot roster are costed like their closest measured sibling.
 PROXY = {"ab_order_id": "ab_order_id_tt"}
 
@@ -111,6 +140,70 @@ def cell_seconds(cfg: dict[str, Any], n: int, budget: float, prof: dict[tuple[in
             + move_time(pb, cfg["budget_mode"], budget, b0)) + OVERHEAD_S
         total += cfg["games_per_pair"] * per_pair
     return total
+
+
+@lru_cache(maxsize=1)
+def pilot_model(pilots: tuple[Path, ...] = PILOTS) -> tuple[
+        dict[tuple[int, str], AgentProfile], dict[int, float], float, float]:
+    """(profiles, plies per board, pilot budget, parallel efficiency) from the pilots."""
+    per_pilot = [(p, read_records(p / "games.jsonl")) for p in pilots]
+    recs = [r for _, rs in per_pilot for r in rs]
+    b0 = recs[0].time_budget_s
+    prof, plies = profiles(recs, b0)
+    eff = sum(r.wall_time_s for r in recs) / sum(pilot_elapsed(p) * pilot_workers(p) for p in pilots)
+    return prof, plies, b0, eff
+
+
+def estimated_hours(cfg: dict[str, Any], cells: list[tuple[int, int, float]], workers: int) -> float:
+    """Calibrated wall hours of ``cells`` of a config on ``workers`` workers."""
+    prof, plies, b0, eff = pilot_model()
+    secs = sum(cell_seconds(cfg, n, float(b), prof, plies, b0)
+               * calibration_factor(cfg["budget_mode"], float(b)) for n, _k, b in cells)
+    return secs / (workers * eff) / 3600
+
+
+def chunk_times(progress: Path) -> dict[int, float]:
+    """Chunk number -> seconds from the last START to the matching END in a progress log."""
+    start: dict[int, datetime] = {}
+    out: dict[int, float] = {}
+    for line in progress.read_text(encoding="utf-8", errors="replace").splitlines():
+        m = re.match(r"(\S+ \S+)\s+chunk (\d+) .*?(START|END)", line)
+        if not m:
+            continue
+        t, n = datetime.fromisoformat(m.group(1)), int(m.group(2))
+        if m.group(3) == "START":
+            start[n] = t
+        elif n in start:
+            out[n] = (t - start[n]).total_seconds()
+    return out
+
+
+def calibration_report(run_root: Path = Path("results"), progress: Path | None = None) -> list[str]:
+    """Markdown: predicted vs actual summed game wall time per cell of the full runs, and
+    actual parallel efficiency per chunk (needs ``results/<config>/full`` and the progress log)."""
+    prof, plies, b0, _ = pilot_model()
+    lines = ["", "## Calibration on the full runs", "",
+             "| config | cell | games | predicted CPU h | actual CPU h | actual / predicted |",
+             "|---|---|---|---|---|---|"]
+    for name in FULL_ORDER:
+        f = run_root / name / "full" / "games.jsonl"
+        if not f.exists():
+            continue
+        cfg = load_config(CONFIG_DIR / f"{name}.yaml")
+        actual: dict[tuple[int, int, float], list[float]] = defaultdict(list)
+        for r in read_records(f):
+            actual[(r.config["n"], r.config["k"], r.time_budget_s)].append(r.wall_time_s)
+        for n, k, b in cell_list(cfg):
+            a = actual.get((n, k, float(b)))
+            if cfg["budget_mode"] == "time" and a:
+                pred = cell_seconds(cfg, n, float(b), prof, plies, b0)
+                lines.append(f"| {name} | {n}x{k}@{b:g} | {len(a)} | {pred / 3600:.2f} | "
+                             f"{sum(a) / 3600:.2f} | {sum(a) / pred:.2f} |")
+    if progress is not None and progress.exists():
+        lines += ["", "Elapsed time per chunk (progress log):", "",
+                  "| chunk | elapsed min |", "|---|---|"]
+        lines += [f"| {n} | {t / 60:.1f} |" for n, t in sorted(chunk_times(progress).items())]
+    return lines
 
 
 @dataclass
@@ -217,17 +310,22 @@ def run(pilots: list[Path], chunk_hours: float) -> tuple[str, list[Chunk]]:
         cfg = load_config(CONFIG_DIR / f"{name}.yaml")
         per_cfg[name] = 0.0
         for n, k, b in cell_list(cfg):
-            secs = cell_seconds(cfg, n, float(b), prof, plies, b0) / (workers * eff)
+            secs = (cell_seconds(cfg, n, float(b), prof, plies, b0)
+                    * calibration_factor(cfg["budget_mode"], float(b)) / (workers * eff))
             cells.append((name, f"{n}x{k}@{b:g}", secs / 3600))
             per_cfg[name] += secs / 3600
     extras_h = {k: v / 3600 for k, v in EXTRAS_S.items()}
-    lines += ["", "## Per cell (hours)", "", "| config | cell | hours |", "|---|---|---|"]
+    lines += ["", "## Per cell (hours, calibrated)", ""]
+    lines += ["Pilot-profile model times `calibration_factor` (1.20 at 0.1 s, 0.90 at 0.5 s and 1 s, "
+              "1.0 for node budgets: not yet measured).", ""]
+    lines += ["| config | cell | hours |", "|---|---|---|"]
     lines += [f"| {c} | {cell} | {h:.2f} |" for c, cell, h in cells]
     lines += ["", "## Per config", "", "| config | games hours | + extras | total |", "|---|---|---|---|"]
     for name in FULL_ORDER:
         e = extras_h.get(name, 0.0)
         lines.append(f"| {name} | {per_cfg[name]:.2f} | {e:.2f} | {per_cfg[name] + e:.2f} |")
     lines.append(f"| **all** | | | **{sum(per_cfg.values()) + sum(extras_h.values()):.1f}** |")
+    lines += calibration_report(progress=Path("results/logs/progress.txt"))
     chunks = plan_chunks(cells, extras_h, chunk_hours)
     lines += ["", f"## Chunks (each <= {chunk_hours:g} h, run in this order; all resumable)", "",
               "| # | est. h | command |", "|---|---|---|"]
