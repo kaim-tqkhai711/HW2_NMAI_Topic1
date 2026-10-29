@@ -50,6 +50,7 @@ from eval.tournament import (
     GameRecord,
     RegistryFactory,
     max_workers,
+    games_file,
     read_records,
     round_robin,
 )
@@ -255,7 +256,7 @@ def _node_budget(r: GameRecord) -> float:
 
 def write_summary(run_dir: Path, cfg: dict[str, Any]) -> None:
     """Rebuild ``summary.csv`` from every game stored in the run directory."""
-    records = read_records(run_dir / "games.jsonl")
+    records = read_records(games_file(run_dir))
     rows = summarise(records, cfg["budget_mode"], cfg.get("anchor")) if records else []
     with (run_dir / "summary.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=SUMMARY_FIELDS)

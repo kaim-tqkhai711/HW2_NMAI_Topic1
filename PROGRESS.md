@@ -185,7 +185,7 @@ and an AB-leaf simulation costs 5-10 ms.
 Details, CIs and tables: `results/FULL_RUN_SUMMARY.md`. All chunks exit 0, 44,160 games, no missing games or fields.
 
 * **Gate failed at 9x5@0.1 s**: 13 of 15 search agents exceed 1.5x budget on 1.2-6.8 % of moves (worst `mcts_ab_tac`
-  6.79 %); the overshoot is an absolute ~56-77 ms for every agent (the agent's own clock agrees). 7x4@0.5, 9x5@0.5
+  6.79 %); the overshoot is absolute and in the tail (median +3...+15 ms, p95 +33...+58 ms, violators overshoot ~56-77 ms; the agent's own clock agrees). Kept and labelled "budget-noisy"; chunk 11 of `scripts/run_chunks_7_10.ps1` replays the cell with 6 workers into `results/main_9x9/full_w6_0.1/` for comparison. 7x4@0.5, 9x5@0.5
   and 9x5@1.0 pass (worst 0.03 %). The `mcts_ab*` clock fix holds at 0.5 s and 1 s. Cause not isolated (scheduling
   under 10 workers on a hybrid CPU vs coarse clock checks); decision on the 0.1 s cell left to the owner.
 * `experiments/failure_cases.py` was scanning non-FULL runs (pilot, quick; 3,264 of 47,424 games) and capped the scan
@@ -205,8 +205,9 @@ Details, CIs and tables: `results/FULL_RUN_SUMMARY.md`. All chunks exit 0, 44,16
   time (e.g. chunk 6: 3.57 h vs 3.51 h). Node-budget cells are not calibrated (no full run yet).
 * Run scripts append to `progress.txt` through a `FileShare.ReadWrite` stream with retries (a `Get-Content -Wait` reader cannot
   block it; the original failure could not be reproduced with `Add-Content` in a quick test).
-* `scripts/run_chunks_7_10.ps1` (main_11x11, failure_mining, nodes_budget 7x4 and 9x5@2000, then plots/tables/failure_cases):
-  estimated 0.55 + 0.01 + 5.40 + 3.90 = 9.86 h, under the 12 h limit; if it is exceeded, drop chunk 10 first.
+* `scripts/run_chunks_7_10.ps1` (main_11x11, failure_mining, nodes_budget 7x4 and 9x5@2000, 9x5@0.1 replicate with 6 workers, then plots/tables/failure_cases):
+  estimated 0.55 + 0.01 + 5.40 + 3.90 + 0.97 = 10.83 h, under the 12 h limit; if it is exceeded, drop chunk 11, then 10 first.
+* Large `games.jsonl` (> 20 MB) are shipped as `.jsonl.gz` (`scripts/compress_jsonl.py`; plain `results/*/full*/*.jsonl` git-ignored). Every loader reads either form (`eval.tournament.games_file` / `read_records`); the scripts still write plain `.jsonl` (resume needs it), compress afterwards. Summary, tables and failure_cases regenerated from the `.gz` alone are byte-identical (figure PNG `budget_modes` varies run to run, pre-existing).
 
 ## Interface proposals
 

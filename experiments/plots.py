@@ -21,7 +21,7 @@ import numpy as np  # noqa: E402
 from numpy.typing import NDArray  # noqa: E402
 
 from eval.stats import head_to_head  # noqa: E402
-from eval.tournament import GameRecord, read_records  # noqa: E402
+from eval.tournament import GameRecord, games_file, read_records  # noqa: E402
 
 DPI = 300
 # Okabe-Ito colour-blind-safe palette; markers disambiguate beyond eight series.
@@ -32,7 +32,11 @@ Row = dict[str, str]
 
 
 def latest_runs(results_root: Path) -> dict[str, Path]:
-    """Newest run directory (one containing summary.csv) per config name."""
+    """Run directory (one containing summary.csv) per config name.
+
+    A directory named ``full`` wins; otherwise the newest. Replicate runs such as
+    ``full_w6_0.1`` are never picked over ``full``.
+    """
     out: dict[str, Path] = {}
     if not results_root.exists():
         return out
@@ -41,7 +45,7 @@ def latest_runs(results_root: Path) -> dict[str, Path]:
             continue
         runs = sorted(d for d in cfg_dir.iterdir() if (d / "summary.csv").exists())
         if runs:
-            out[cfg_dir.name] = runs[-1]
+            out[cfg_dir.name] = next((d for d in runs if d.name == "full"), runs[-1])
     return out
 
 
@@ -81,7 +85,7 @@ def main_summary(runs: dict[str, Path]) -> list[Row]:
 
 def main_records(runs: dict[str, Path]) -> list[GameRecord]:
     """All games of the main-tournament configs that have a run."""
-    return [g for c in MAIN_CONFIGS if c in runs for g in read_records(runs[c] / "games.jsonl")]
+    return [g for c in MAIN_CONFIGS if c in runs for g in read_records(games_file(runs[c]))]
 
 
 def main_puzzles(runs: dict[str, Path]) -> list[Row]:
@@ -158,7 +162,7 @@ def plot_scaling(runs: dict[str, Path], out_dir: Path) -> list[Path]:
     """Score of the best alpha-beta against each MCTS-family agent for N = 7, 9, 11."""
     if "scaling" not in runs:
         return []
-    recs = read_records(runs["scaling"] / "games.jsonl")
+    recs = read_records(games_file(runs["scaling"]))
     ab = "ab_full_timed"
     others = sorted({a for r in recs for a in (r.agent_x, r.agent_o)} - {ab, "random"})
     sizes = sorted({r.config["n"] for r in recs})

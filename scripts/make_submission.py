@@ -1,7 +1,8 @@
 """Build HW2_<NAME>.zip and check that it works from a clean environment.
 
 The archive holds the source, tests, docs, configs, README, requirements and the
-FULL results only: quick-run directories (``results/<config>/<YYYYMMDD-HHMMSS>``),
+FULL results only (large ``games.jsonl`` files as ``.jsonl.gz``; the plain file is left out
+whenever a ``.gz`` sibling exists): quick-run directories (``results/<config>/<YYYYMMDD-HHMMSS>``),
 caches and ``.git`` are left out. Unless ``--no-verify`` is given, the archive is
 unpacked into a temporary directory, a fresh virtual environment is created,
 ``requirements.txt`` is installed and ``pytest -q -m "not slow"`` is run there.
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CODE_DIRS = ("core", "agents", "eval", "gui", "experiments", "scripts", "tests", "docs")
 TOP_FILES = ("README.md", "requirements.txt", "pyproject.toml")
 QUICK_RUN = re.compile(r"^\d{8}-\d{6}$")
+LARGE_BYTES = 20_000_000
 SKIP_PARTS = {"__pycache__", ".git", ".pytest_cache", ".mypy_cache", "venv", ".venv"}
 
 
@@ -42,6 +44,11 @@ def collect(root: Path) -> list[Path]:
         rel = p.relative_to(root)
         if any(QUICK_RUN.match(part) for part in rel.parts):
             continue
+        if p.suffix == ".jsonl" and p.with_name(p.name + ".gz").exists():
+            continue
+        if p.suffix == ".jsonl" and p.stat().st_size > LARGE_BYTES:
+            print(f"warning: {rel} is {p.stat().st_size / 1e6:.0f} MB and has no .gz "
+                  "(python scripts/compress_jsonl.py)")
         out.add(rel)
     return sorted(q for q in out if not _skip(q))
 
@@ -87,7 +94,8 @@ def main(argv: list[str] | None = None) -> int:
     out_path = args.out / f"HW2_{args.name}.zip"
     files = build_zip(ROOT, out_path)
     size_mb = out_path.stat().st_size / 1e6
-    print(f"{out_path}: {len(files)} files, {size_mb:.1f} MB")
+    raw_mb = sum((ROOT / f).stat().st_size for f in files) / 1e6
+    print(f"{out_path}: {len(files)} files, zip {size_mb:.1f} MB (uncompressed content {raw_mb:.1f} MB)")
     if args.no_verify:
         return 0
     code = verify(out_path)

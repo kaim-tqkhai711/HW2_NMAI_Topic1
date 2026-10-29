@@ -13,7 +13,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from eval.tournament import VIOLATION_FACTOR, GameRecord, read_records
+from eval.tournament import VIOLATION_FACTOR, GameRecord, games_file, read_records
 
 
 def violation_table(records: list[GameRecord]) -> dict[tuple[int, str], tuple[int, int, float]]:
@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("run_dir", type=Path)
     ap.add_argument("--md", action="store_true", help="print a Markdown table")
     args = ap.parse_args(argv)
-    table = violation_table(read_records(args.run_dir / "games.jsonl"))
+    table = violation_table(read_records(games_file(args.run_dir)))
     sizes = sorted({n for n, _ in table})
     agents = sorted({a for _, a in table})
     worst = 0.0

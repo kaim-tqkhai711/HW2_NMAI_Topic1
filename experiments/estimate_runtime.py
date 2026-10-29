@@ -35,7 +35,7 @@ from pathlib import Path
 from statistics import mean
 from typing import Any
 
-from eval.tournament import GameRecord, max_workers, read_records
+from eval.tournament import GameRecord, games_file, max_workers, read_records
 from experiments.run import cell_list, load_config
 
 CONFIG_DIR = Path("experiments/configs")
@@ -146,7 +146,7 @@ def cell_seconds(cfg: dict[str, Any], n: int, budget: float, prof: dict[tuple[in
 def pilot_model(pilots: tuple[Path, ...] = PILOTS) -> tuple[
         dict[tuple[int, str], AgentProfile], dict[int, float], float, float]:
     """(profiles, plies per board, pilot budget, parallel efficiency) from the pilots."""
-    per_pilot = [(p, read_records(p / "games.jsonl")) for p in pilots]
+    per_pilot = [(p, read_records(games_file(p))) for p in pilots]
     recs = [r for _, rs in per_pilot for r in rs]
     b0 = recs[0].time_budget_s
     prof, plies = profiles(recs, b0)
@@ -186,7 +186,7 @@ def calibration_report(run_root: Path = Path("results"), progress: Path | None =
              "| config | cell | games | predicted CPU h | actual CPU h | actual / predicted |",
              "|---|---|---|---|---|---|"]
     for name in FULL_ORDER:
-        f = run_root / name / "full" / "games.jsonl"
+        f = games_file(run_root / name / "full")
         if not f.exists():
             continue
         cfg = load_config(CONFIG_DIR / f"{name}.yaml")
@@ -270,12 +270,12 @@ def pilot_workers(pilot: Path) -> int:
 def pilot_elapsed(pilot: Path) -> float:
     """Seconds from the first logged command to the last written game."""
     start = (pilot / "commands.log").read_text().splitlines()[0].split()[0]
-    return (pilot / "games.jsonl").stat().st_mtime - datetime.fromisoformat(start).timestamp()
+    return games_file(pilot).stat().st_mtime - datetime.fromisoformat(start).timestamp()
 
 
 def run(pilots: list[Path], chunk_hours: float) -> tuple[str, list[Chunk]]:
     """Build the markdown report and the chunk list."""
-    per_pilot = [(p, read_records(p / "games.jsonl")) for p in pilots]
+    per_pilot = [(p, read_records(games_file(p))) for p in pilots]
     recs = [r for _, rs in per_pilot for r in rs]
     workers = pilot_workers(pilots[0])
     b0 = recs[0].time_budget_s

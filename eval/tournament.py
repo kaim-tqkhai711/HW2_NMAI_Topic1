@@ -7,6 +7,7 @@ method; use `RegistryFactory` for entries of ``AGENT_REGISTRY``.
 """
 from __future__ import annotations
 
+import gzip
 import importlib
 import json
 import os
@@ -347,12 +348,30 @@ def _repair_jsonl(path: Path) -> None:
         path.write_bytes(data[: data.rfind(b"\n") + 1])
 
 
+def games_file(run_dir: Path) -> Path:
+    """The games file of a run directory: ``games.jsonl``, else ``games.jsonl.gz`` if that exists."""
+    plain = run_dir / "games.jsonl"
+    gz = plain.with_name("games.jsonl.gz")
+    return gz if not plain.exists() and gz.exists() else plain
+
+
 def read_records(path: Path) -> list[GameRecord]:
-    """Read all complete records from a JSONL file (missing file -> empty)."""
+    """Read all complete records from a JSONL file (missing file -> empty).
+
+    A path that does not exist is retried with a ``.gz`` suffix, and a ``.gz`` path is
+    decompressed on the fly, so callers need not care whether a run was compressed.
+    """
+    if not path.exists() and path.suffix != ".gz" and path.with_name(path.name + ".gz").exists():
+        path = path.with_name(path.name + ".gz")
     if not path.exists():
         return []
     out: list[GameRecord] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    if path.suffix == ".gz":
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            text = f.read()
+    else:
+        text = path.read_text(encoding="utf-8")
+    for line in text.splitlines():
         if line.strip():
             out.append(GameRecord.from_json(line))
     return out

@@ -1,5 +1,8 @@
 # FULL_RUN_SUMMARY (chunk 1-6)
 
+**Nhãn: ô 9×9@0,1 s là "budget-noisy"** (mục 2): giữ nguyên dữ liệu, không dùng để khẳng định tuân thủ budget; một lần chạy lặp
+với 6 worker (`results/main_9x9/full_w6_0.1/`, chunk 11) sẽ được so thứ hạng (Kendall tau, Elo từng agent).
+
 Dữ liệu: `results/{ablation_ab,ablation_mcts,scaling,main_7x7,main_9x9}/full`, máy 22 logical CPU
 (10 worker), chạy 28-29/10/2026. Chunk 7-10 (main_11x11, failure_mining, nodes_budget) **chưa chạy**.
 
@@ -48,8 +51,29 @@ Tính lại từ `wall_s` của từng nước (cùng quy tắc `experiments/vio
 | ab_order_id_tt | 1,17 | 2,40x |
 | ab_full_timed | 1,16 | 2,50x |
 
-  Chẩn đoán: (a) vượt budget là **tuyệt đối**, trung vị 56-77 ms ở mọi agent (kể cả AB và MCTS), nên ở 0,1 s
-  thành 1,56-1,64x còn ở 0,5 s chỉ ~1,1x; (b) đồng hồ trong chính agent (`stat_time_s`) cũng > 0,15 s ở 6.572 /
+  Chẩn đoán: (a) vượt budget là **tuyệt đối**, không theo tỉ lệ: nhóm nước vượt > 50 ms có trung vị vượt 56-77 ms ở mọi
+  agent (AB lẫn MCTS), nên ở 0,1 s thành ~1,6x còn ở 0,5 s chỉ ~1,1x. Overshoot tuyệt đối của mọi nước đi (ms, wall - 0,1 s) ở 9x9@0,1:
+
+| agent | số nước | trung vị | p95 | max | % nước vượt > 50 ms |
+|---|---|---|---|---|---|
+| ab_full | 13,205 | +6 | +38 | 126 | 1.6 |
+| ab_full_timed | 13,379 | +6 | +34 | 150 | 1.2 |
+| ab_order | 14,634 | +6 | +39 | 165 | 2.1 |
+| ab_order_id_tt | 13,327 | +5 | +33 | 140 | 1.2 |
+| ab_plain | 14,463 | +3 | +10 | 74 | 0.1 |
+| backtracking_d2 | 15,700 | -52 | +4 | 74 | 0.0 |
+| mcts_ab | 14,273 | +12 | +53 | 590 | 6.0 |
+| mcts_ab_tac | 15,847 | +11 | +58 | 734 | 6.8 |
+| mcts_eval | 8,984 | +14 | +39 | 326 | 2.4 |
+| mcts_eval_tac | 9,003 | +13 | +43 | 140 | 2.9 |
+| mcts_heuristic | 14,424 | +7 | +50 | 278 | 4.8 |
+| mcts_heuristic_tac | 14,866 | +5 | +55 | 314 | 6.4 |
+| mcts_random | 13,456 | +15 | +40 | 149 | 1.8 |
+| mcts_rave | 12,465 | +6 | +51 | 592 | 5.4 |
+| mcts_rave_tac | 12,277 | +3 | +54 | 200 | 6.3 |
+
+  (`backtracking_d2` âm vì dừng sớm.) Trung vị chỉ +3...+15 ms; vi phạm đến từ phần đuôi (p95 +33...+58 ms, max tới 734 ms ở hybrid AB-lá);
+  (b) đồng hồ trong chính agent (`stat_time_s`) cũng > 0,15 s ở 6.572 /
   6.585 nước vi phạm, tức không phải độ trễ của harness; (c) thử riêng trên 60 thế 9x9 @0,1 s: `ab_order_id_tt`
   chạy một mình 0,0 % vi phạm, chạy 10 tiến trình song song 10,8 %; `mcts_heuristic` 10,0 % một mình và 9,3 %
   song song. Kết luận thận trọng: nhiễu lập lịch khi 10 worker chạy trên CPU lai + độ thô của kiểm tra đồng hồ

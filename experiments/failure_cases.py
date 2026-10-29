@@ -25,7 +25,7 @@ from agents.presets import AB_FULL
 from core.board import Board
 from core.rules import GameConfig, X
 from eval.puzzles import classify
-from eval.tournament import GameRecord, read_records
+from eval.tournament import GameRecord, games_file, read_records
 from experiments.plots import latest_runs
 
 MAX_EXAMPLES = 3
@@ -195,7 +195,7 @@ def main() -> None:
     for run in latest_runs(args.results).values():
         if run.name != "full" and not args.all_runs:
             continue
-        f = run / "games.jsonl"
+        f = games_file(run)
         if f.exists():
             records += read_records(f)
     a, b = mine(records)
