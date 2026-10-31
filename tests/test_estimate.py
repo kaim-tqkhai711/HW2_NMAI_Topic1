@@ -59,7 +59,9 @@ def test_calibration_factor_hits_its_knots_clamps_and_interpolates_in_log_budget
     assert calibration_factor("time", 1.0) == 0.90
     assert calibration_factor("time", 0.01) == 1.20 and calibration_factor("time", 5.0) == 0.90
     assert abs(calibration_factor("time", (0.1 * 0.5) ** 0.5) - 1.05) < 1e-9  # geometric midpoint
-    assert calibration_factor("nodes", 2000) == 1.0
+    assert calibration_factor("nodes", 2000) == 0.90 and calibration_factor("nodes", 10000) == 1.21
+    assert calibration_factor("nodes", 500) == 0.90 and calibration_factor("nodes", 50000) == 1.21
+    assert abs(calibration_factor("nodes", (2000 * 10000) ** 0.5) - 1.055) < 1e-9
 
 
 def test_estimate_counts_only_the_selected_cells() -> None:

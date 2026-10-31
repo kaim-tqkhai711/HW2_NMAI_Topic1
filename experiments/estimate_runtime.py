@@ -48,11 +48,13 @@ EXTRAS_S = {"main_9x9": 16 * 30 * 0.5, "ablation_ab": 8 * 60.0}
 # Actual / predicted summed game wall time per time budget, measured on the full runs of
 # chunks 2-6 (main_9x9 0.1 s 1.20, 0.5 s 0.90, 1 s 0.90; ablation_mcts 0.93, main_7x7 0.93, scaling
 # 0.77-0.99). 0.1 s cells run long (about 60 ms of clock overshoot per search move), 0.5 s and
-# 1 s cells short. Node-budget cells have no full run yet: left at 1.0 (a 264-game quick run
-# gave 0.71, too small a sample to use). Rosters made only of alpha-beta agents play longer games than
-# the pilot's mixed roster (ablation_ab: 1.36); that is not modelled.
+# 1 s cells short. Node budgets, from the full 7x4 run of chunk 9 (18,190 games): 2,000 nodes 0.90,
+# 10,000 nodes 1.21. The ratio grows with the budget because MCTS nodes/s drop as the tree grows
+# (pilot 2,200/s at 0.5 s, 1,500-1,800/s at 10,000 simulations) while alpha-beta agents stop below
+# the node budget (iterative deepening finishes first: 0.4-0.7 of the pilot cost). Rosters made only of
+# alpha-beta agents play longer games than the pilot's mixed roster (ablation_ab: 1.36); that is not modelled.
 TIME_CAL = ((0.1, 1.20), (0.5, 0.90), (1.0, 0.90))
-NODES_CAL = 1.0
+NODES_CAL = ((2000.0, 0.90), (10000.0, 1.21))
 # Measured parallel efficiency of chunks of 15 min or more: 0.98-0.99 (pilot: 0.98).
 PILOTS = (Path("results/pilot_main/pilot2"), Path("results/pilot_11x11/pilot"))
 FULL_ORDER = ["ablation_ab", "ablation_mcts", "scaling", "main_7x7", "main_9x9", "main_11x11",
@@ -106,14 +108,13 @@ def move_time(p: AgentProfile, mode: str, budget: float, b0: float) -> float:
 
 def calibration_factor(mode: str, budget: float) -> float:
     """Correction of a cell's predicted CPU seconds (log-linear in the budget, clamped)."""
-    if mode == "nodes":
-        return NODES_CAL
-    if budget <= TIME_CAL[0][0]:
-        return TIME_CAL[0][1]
-    for (b0, f0), (b1, f1) in zip(TIME_CAL, TIME_CAL[1:]):
+    knots = NODES_CAL if mode == "nodes" else TIME_CAL
+    if budget <= knots[0][0]:
+        return knots[0][1]
+    for (b0, f0), (b1, f1) in zip(knots, knots[1:]):
         if budget <= b1:
             return f0 + (f1 - f0) * (log(budget) - log(b0)) / (log(b1) - log(b0))
-    return TIME_CAL[-1][1]
+    return knots[-1][1]
 
 
 # Agents absent from the pilot roster are costed like their closest measured sibling.
@@ -192,11 +193,15 @@ def calibration_report(run_root: Path = Path("results"), progress: Path | None =
         cfg = load_config(CONFIG_DIR / f"{name}.yaml")
         actual: dict[tuple[int, int, float], list[float]] = defaultdict(list)
         for r in read_records(f):
-            actual[(r.config["n"], r.config["k"], r.time_budget_s)].append(r.wall_time_s)
+            budget = float(r.game_id.split("|")[1][1:]) if cfg["budget_mode"] == "nodes" else r.time_budget_s
+            actual[(r.config["n"], r.config["k"], budget)].append(r.wall_time_s)
+        pairs = len(cfg["agents"]) * (len(cfg["agents"]) - 1) // 2
         for n, k, b in cell_list(cfg):
             a = actual.get((n, k, float(b)))
-            if cfg["budget_mode"] == "time" and a:
+            if a:
                 pred = cell_seconds(cfg, n, float(b), prof, plies, b0)
+                if cfg["budget_mode"] == "nodes":
+                    pred *= len(a) / (pairs * cfg["games_per_pair"])
                 lines.append(f"| {name} | {n}x{k}@{b:g} | {len(a)} | {pred / 3600:.2f} | "
                              f"{sum(a) / 3600:.2f} | {sum(a) / pred:.2f} |")
     if progress is not None and progress.exists():
@@ -273,6 +278,27 @@ def pilot_elapsed(pilot: Path) -> float:
     return games_file(pilot).stat().st_mtime - datetime.fromisoformat(start).timestamp()
 
 
+def node_budget_notes(cells: list[tuple[str, str, float]], workers: int, eff: float) -> list[str]:
+    """Markdown: how the node-budget factors were obtained and what they predict for 9x5@2000."""
+    h = {(c, cell): v for c, cell, v in cells}.get(("nodes_budget", "9x5@2000"))
+    if h is None:
+        return []
+    return ["", "## Node-budget calibration (chunk 9, 7x4, 18,190 games)", "",
+            "Method: for each node-budget cell the summed `wall_time_s` of its games is divided by the pilot",
+            "model's prediction for the same games (`cell_seconds`, per-agent nodes / pilot nodes-per-second).",
+            "The two ratios (0.90 at 2,000 nodes, 1.21 at 10,000) are the knots of `NODES_CAL` and are",
+            "interpolated log-linearly in the budget. By pair class at 2,000 nodes the ratio is 0.96 for",
+            "alpha-beta vs MCTS, 0.85 for MCTS vs MCTS, 0.66 for alpha-beta vs alpha-beta (iterative deepening",
+            "stops below the node budget); at 10,000 nodes MCTS vs MCTS is 1.65 (tree growth lowers nodes/s).",
+            "Chunk 9 used 10 workers for 61.5 CPU hours, i.e. the 6.15 h from 14:37 to its last game at 20:46",
+            "(parallel efficiency 1.00); the run was then stalled with the last 10 games unfinished until it",
+            "was interrupted at 00:04 (cause unknown, the 10 games replay in under 25 s each).", "",
+            f"Prediction for 9x5@2000 on {workers} workers: **{h:.1f} h** (uncalibrated model 3.9 h;",
+            "pessimistic bound with the 10,000-node factor 4.7 h). Caveat: on 9x5 alpha-beta agents fill more of",
+            "the node budget than on 7x4, so the true value is likely between the calibrated and the pessimistic figure.",
+            f"(parallel efficiency used: {eff:.2f})"]
+
+
 def run(pilots: list[Path], chunk_hours: float) -> tuple[str, list[Chunk]]:
     """Build the markdown report and the chunk list."""
     per_pilot = [(p, read_records(games_file(p))) for p in pilots]
@@ -316,8 +342,9 @@ def run(pilots: list[Path], chunk_hours: float) -> tuple[str, list[Chunk]]:
             per_cfg[name] += secs / 3600
     extras_h = {k: v / 3600 for k, v in EXTRAS_S.items()}
     lines += ["", "## Per cell (hours, calibrated)", ""]
-    lines += ["Pilot-profile model times `calibration_factor` (1.20 at 0.1 s, 0.90 at 0.5 s and 1 s, "
-              "1.0 for node budgets: not yet measured).", ""]
+    lines += ["Pilot-profile model times `calibration_factor` (time budgets: 1.20 at 0.1 s, 0.90 at "
+              "0.5 s and 1 s; node budgets: 0.90 at 2,000 and 1.21 at 10,000 nodes, log-linear in "
+              "between; both measured on full runs).", ""]
     lines += ["| config | cell | hours |", "|---|---|---|"]
     lines += [f"| {c} | {cell} | {h:.2f} |" for c, cell, h in cells]
     lines += ["", "## Per config", "", "| config | games hours | + extras | total |", "|---|---|---|---|"]
@@ -326,6 +353,7 @@ def run(pilots: list[Path], chunk_hours: float) -> tuple[str, list[Chunk]]:
         lines.append(f"| {name} | {per_cfg[name]:.2f} | {e:.2f} | {per_cfg[name] + e:.2f} |")
     lines.append(f"| **all** | | | **{sum(per_cfg.values()) + sum(extras_h.values()):.1f}** |")
     lines += calibration_report(progress=Path("results/logs/progress.txt"))
+    lines += node_budget_notes(cells, workers, eff)
     chunks = plan_chunks(cells, extras_h, chunk_hours)
     lines += ["", f"## Chunks (each <= {chunk_hours:g} h, run in this order; all resumable)", "",
               "| # | est. h | command |", "|---|---|---|"]

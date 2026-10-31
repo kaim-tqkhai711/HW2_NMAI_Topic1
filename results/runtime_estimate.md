@@ -67,7 +67,7 @@ Model check on `results\pilot_11x11\pilot` (in-sample, so it only tests the plum
 
 ## Per cell (hours, calibrated)
 
-Pilot-profile model times `calibration_factor` (1.20 at 0.1 s, 0.90 at 0.5 s and 1 s, 1.0 for node budgets: not yet measured).
+Pilot-profile model times `calibration_factor` (time budgets: 1.20 at 0.1 s, 0.90 at 0.5 s and 1 s; node budgets: 0.90 at 2,000 and 1.21 at 10,000 nodes, log-linear in between; both measured on full runs).
 
 | config | cell | hours |
 |---|---|---|
@@ -82,9 +82,9 @@ Pilot-profile model times `calibration_factor` (1.20 at 0.1 s, 0.90 at 0.5 s and
 | main_9x9 | 9x5@1 | 3.50 |
 | main_11x11 | 11x5@0.5 | 0.55 |
 | failure_mining | 7x4@0.1 | 0.01 |
-| nodes_budget | 7x4@2000 | 0.91 |
-| nodes_budget | 7x4@10000 | 4.49 |
-| nodes_budget | 9x5@2000 | 3.90 |
+| nodes_budget | 7x4@2000 | 0.82 |
+| nodes_budget | 7x4@10000 | 5.44 |
+| nodes_budget | 9x5@2000 | 3.51 |
 
 ## Per config
 
@@ -97,8 +97,8 @@ Pilot-profile model times `calibration_factor` (1.20 at 0.1 s, 0.90 at 0.5 s and
 | main_9x9 | 6.03 | 0.07 | 6.10 |
 | main_11x11 | 0.55 | 0.00 | 0.55 |
 | failure_mining | 0.01 | 0.00 | 0.01 |
-| nodes_budget | 9.30 | 0.00 | 9.30 |
-| **all** | | | **16.8** |
+| nodes_budget | 9.76 | 0.00 | 9.76 |
+| **all** | | | **17.3** |
 
 ## Calibration on the full runs
 
@@ -113,6 +113,10 @@ Pilot-profile model times `calibration_factor` (1.20 at 0.1 s, 0.90 at 0.5 s and
 | main_9x9 | 9x5@0.1 | 12000 | 4.76 | 5.72 | 1.20 |
 | main_9x9 | 9x5@0.5 | 12000 | 21.20 | 19.08 | 0.90 |
 | main_9x9 | 9x5@1 | 12000 | 38.22 | 34.42 | 0.90 |
+| main_11x11 | 11x5@0.5 | 3600 | 5.99 | 5.58 | 0.93 |
+| failure_mining | 7x4@0.1 | 240 | 0.04 | 0.04 | 1.01 |
+| nodes_budget | 7x4@2000 | 9100 | 8.92 | 7.99 | 0.90 |
+| nodes_budget | 7x4@10000 | 9090 | 44.05 | 53.49 | 1.21 |
 
 Elapsed time per chunk (progress log):
 
@@ -123,6 +127,25 @@ Elapsed time per chunk (progress log):
 | 4 | 15.5 |
 | 5 | 150.4 |
 | 6 | 210.5 |
+| 7 | 34.1 |
+| 8 | 0.3 |
+
+## Node-budget calibration (chunk 9, 7x4, 18,190 games)
+
+Method: for each node-budget cell the summed `wall_time_s` of its games is divided by the pilot
+model's prediction for the same games (`cell_seconds`, per-agent nodes / pilot nodes-per-second).
+The two ratios (0.90 at 2,000 nodes, 1.21 at 10,000) are the knots of `NODES_CAL` and are
+interpolated log-linearly in the budget. By pair class at 2,000 nodes the ratio is 0.96 for
+alpha-beta vs MCTS, 0.85 for MCTS vs MCTS, 0.66 for alpha-beta vs alpha-beta (iterative deepening
+stops below the node budget); at 10,000 nodes MCTS vs MCTS is 1.65 (tree growth lowers nodes/s).
+Chunk 9 used 10 workers for 61.5 CPU hours, i.e. the 6.15 h from 14:37 to its last game at 20:46
+(parallel efficiency 1.00); the run was then stalled with the last 10 games unfinished until it
+was interrupted at 00:04 (cause unknown, the 10 games replay in under 25 s each).
+
+Prediction for 9x5@2000 on 10 workers: **3.5 h** (uncalibrated model 3.9 h;
+pessimistic bound with the 10,000-node factor 4.7 h). Caveat: on 9x5 alpha-beta agents fill more of
+the node budget than on 7x4, so the true value is likely between the calibrated and the pessimistic figure.
+(parallel efficiency used: 0.98)
 
 ## Chunks (each <= 6 h, run in this order; all resumable)
 
@@ -136,8 +159,9 @@ Elapsed time per chunk (progress log):
 | 6 | 3.6 | `python -m experiments.run --config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full --only 9x5@1 --workers 10 --extras` |
 | 7 | 0.5 | `python -m experiments.run --config experiments/configs/main_11x11.yaml --run-dir results/main_11x11/full --only 11x5@0.5 --workers 10` |
 | 8 | 0.0 | `python -m experiments.run --config experiments/configs/failure_mining.yaml --run-dir results/failure_mining/full --only 7x4@0.1 --workers 10` |
-| 9 | 5.4 | `python -m experiments.run --config experiments/configs/nodes_budget.yaml --run-dir results/nodes_budget/full --only 7x4@2000 7x4@10000 --workers 10` |
-| 10 | 3.9 | `python -m experiments.run --config experiments/configs/nodes_budget.yaml --run-dir results/nodes_budget/full --only 9x5@2000 --workers 10` |
+| 9 | 0.8 | `python -m experiments.run --config experiments/configs/nodes_budget.yaml --run-dir results/nodes_budget/full --only 7x4@2000 --workers 10` |
+| 10 | 5.4 | `python -m experiments.run --config experiments/configs/nodes_budget.yaml --run-dir results/nodes_budget/full --only 7x4@10000 --workers 10` |
+| 11 | 3.5 | `python -m experiments.run --config experiments/configs/nodes_budget.yaml --run-dir results/nodes_budget/full --only 9x5@2000 --workers 10` |
 
 Resume after an interruption by re-running the same command: finished game ids
 are skipped and a truncated last JSONL line is repaired. When all chunks of a
