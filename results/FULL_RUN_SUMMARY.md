@@ -1,10 +1,13 @@
-# FULL_RUN_SUMMARY (chunk 1-6)
+# FULL_RUN_SUMMARY (dữ liệu thực nghiệm đã chốt, chunk 1-11)
 
-**Nhãn: ô 9×9@0,1 s là "budget-noisy"** (mục 2): giữ nguyên dữ liệu, không dùng để khẳng định tuân thủ budget; một lần chạy lặp
-với 6 worker (`results/main_9x9/full_w6_0.1/`, chunk 11) sẽ được so thứ hạng (Kendall tau, Elo từng agent).
+**Trạng thái: data freeze.** Mọi chunk đã chạy xong; không chạy lại thực nghiệm nào nếu không có yêu cầu mới.
+Mục 8 = đối chứng 10 vs 6 worker ở ô 9x9@0,1 s; mục 9 = các so sánh bổ sung (11x11, thời gian vs node);
+mục 10 = Findings cuối cùng; mục 11 = danh sách figure/bảng; mục 12 = Limitations (bản chốt); mục 13 = nén + đóng gói.
+Ô 9×9@0,1 s vẫn là **budget-noisy** (mục 2, 8): dùng cho xếp hạng, không dùng để khẳng định tuân thủ budget.
 
-Dữ liệu: `results/{ablation_ab,ablation_mcts,scaling,main_7x7,main_9x9}/full`, máy 22 logical CPU
-(10 worker), chạy 28-29/10/2026. Chunk 7-10 (main_11x11, failure_mining, nodes_budget) **chưa chạy**.
+Dữ liệu FULL: `results/{ablation_ab,ablation_mcts,scaling,main_7x7,main_9x9,main_11x11,failure_mining,nodes_budget}/full`
+và bản lặp `results/main_9x9/full_w6_0.1` (chỉ dùng cho đối chứng). Máy 22 logical CPU (CPU lai), `--workers 10`
+(chunk 11: 6 worker), chạy 28/10-01/11/2026.
 
 **Quy ước kết luận.** CI Elo (bootstrap, neo Random = 0) rất rộng (±150-250) và các agent dùng chung điểm neo
 nên CI chồng lấn dù hai agent cách nhau rõ ràng. Vì vậy mỗi kết luận ghi hai thứ: (i) CI Elo có chồng lấn không,
@@ -21,8 +24,15 @@ Ván đối đầu dùng chung các thế khai cuộc nên đây là so sánh gh
 | scaling | 7x4, 9x5, 11x5 @0.5 | 240 / 240 mỗi ô | 0 | 0 |
 | main_7x7 | 7x4@0.5 | 4.800 / 4.800 | 0 | 0 |
 | main_9x9 | 9x5@0.1, @0.5, @1 | 12.000 / 12.000 mỗi ô (36.000) | 0 | 0 |
+| main_9x9/full_w6_0.1 (bản lặp, 6 worker) | 9x5@0.1 | 12.000 / 12.000 | 0 | 0 |
+| main_11x11 | 11x5@0.5 | 3.600 / 3.600 (36 cặp x 100) | 0 | 0 |
+| failure_mining | 7x4@0.1 | 240 / 240 (6 cặp x 40) | 0 | 0 |
+| nodes_budget | 7x4@2000, 7x4@10000, 9x5@2000 | 9.100 / 9.100 mỗi ô (27.300) | 0 | 0 |
 
-Mọi cặp agent đủ đúng `games_per_pair` ván (kiểm từng cặp); không có `result` ngoài {-1,0,1}, không ván rỗng,
+Kiểm lại ngày 01/11 bằng script riêng trên cả 9 thư mục: mọi cặp agent đủ đúng `games_per_pair` ván (kiểm từng cặp, từng ô); `config.yaml`
+của từng run trùng `experiments/configs/*.yaml` (seed, boards, budgets, games_per_pair, agents, budget_mode); không dòng JSON hỏng;
+không `game_id` trùng **trong** mọi run. Duy nhất `main_9x9/full` và `main_9x9/full_w6_0.1` chia sẻ 12.000 `game_id` của ô 0,1 s
+**có chủ đích** (cùng seed/thế khai cuộc, đây là bản lặp; không bao giờ gộp vào cùng một phép tính Elo). Mọi cặp agent đủ đúng `games_per_pair` ván; không có `result` ngoài {-1,0,1}, không ván rỗng,
 không nước đi thiếu `wall_s`/`nodes`/`stat_time_s`. `puzzles.csv` (30 thế x 16 agent), `ab_depth.csv`,
 `nodes_vs_depth.csv` có đủ.
 
@@ -83,18 +93,23 @@ Tính lại từ `wall_s` của từng nước (cùng quy tắc `experiments/vio
   2. chạy lại riêng 9x5@0.1 với 6 worker để kiểm tra giả thuyết lập lịch (~0,8 h theo mô hình, vì 0,48 h ở 10 worker);
   3. đổi quy tắc vi phạm thành `wall > 1,5 x budget + 0,06 s` (chỉ là diễn đạt lại, không làm tăng tuân thủ thực).
 
+  **Đã chọn hướng 1 + 2** (chunk 11 đã chạy xong); kết quả ở mục 8. Các ô thời gian khác: 11x11@0,5 đạt (tệ nhất `mcts_ab_tac`
+  0,19 %, 14/7.408 nước, max 2,56x); `failure_mining` @0,1 s cả 4 agent > 1 % (tệ nhất `mcts_random` 12,32 %), ô này chỉ để
+  tìm ví dụ, không dùng để xếp hạng.
+
 ## 3. Nguồn dữ liệu của hình/bảng/failure_cases
 
 * Hình lúc 09:36:09-18 và bảng 09:36:19, sau ván cuối (09:32:19), `summary.csv` (09:33:48) và `puzzles.csv`
   (09:36:07) của main_9x9. `experiments/plots.py` đọc `latest_runs` = thư mục `full` cho ablation_ab, ablation_mcts,
   scaling, main_7x7, main_9x9. Bảng `elo_ranking.tex` ghi 600 ván/agent (7x7) và 1.500 ván/agent (9x9, ô 1 s).
   Cột "games" của bảng là chỗ duy nhất ghi số ván; hình không ghi.
-* **Ngoại lệ 1: `budget_modes` KHÔNG phải FULL.** Nó dùng `results/nodes_budget/20261019-053442` (264 ván,
-  chạy quick trước khi sửa đồng hồ). Sẽ được thay khi chunk 9 xong (thư mục `full` xếp sau trong `latest_runs`).
-* **Ngoại lệ 2: `failure_cases.md` bản cũ (09:36:26) quét 47.424 ván, trong đó 3.264 ván không phải FULL**
-  (pilot_main/pilot2 2.400, pilot_11x11 360, failure_mining cũ 240, nodes_budget quick 264) và 3 ví dụ MCTS
-  lấy từ failure_mining cũ. Đã sửa (`experiments/failure_cases.py`: chỉ quét thư mục `full`, cờ `--all-runs`
-  để quét lại tất cả) và sinh lại: **44.160 ván, đều FULL**.
+* **(Đã giải quyết)** `budget_modes` trước đây dùng dữ liệu quick (264 ván); sau chunk 9/10 đã sinh lại từ
+  `results/nodes_budget/full` + `results/main_7x7/full` (mục 11).
+* **(Đã giải quyết)** `failure_cases.md` bản cũ quét cả dữ liệu pilot/quick. Hiện chỉ quét thư mục `full`:
+  **75.300 ván, đều FULL** (= 840 + 1.800 + 720 + 4.800 + 36.000 + 3.600 + 240 + 27.300; không tính bản lặp w6).
+* Sửa nhỏ ngày 01/11 trong `experiments/plots.py`: `spearman` không xử lý hạng bằng nhau và thứ tự agent Elo bằng nhau phụ thuộc
+  hash chuỗi, nên rho ở tiêu đề `budget_modes` đổi giữa các lần chạy (0,93 / 0,95). Đã dùng hạng trung bình + tie-break theo tên
+  (có test); rho cố định = **0,94** (7x7: time@0,5 vs nodes@10000, 14 agent). Không đổi giao diện.
 * Còn lại: `solve.tex` đến từ `results/solve.csv` (19/10), không thuộc các chunk này.
 
 ## 4. Tóm tắt sơ bộ
@@ -192,7 +207,11 @@ Bản sửa đồng hồ **giữ được trong full run ở 0,5 s và 1 s** (c�
 đó là vi phạm tuyệt đối ~60 ms của mọi agent, không riêng hybrid; hybrid chỉ cao nhất (6-7 %) vì mô phỏng chậm
 nhất (một mô phỏng AB-lá ~5-10 ms).
 
-## 5. Failure cases (`results/failure_cases.md`, 44.160 ván FULL)
+## 5. Failure cases (`results/failure_cases.md`, 75.300 ván FULL)
+
+**Bản chốt: đủ 3 MCTS-miss + 3 AB-fail, đều từ dữ liệu FULL.** MCTS-miss: `mcts_random` x2 và `mcts_ab_tac` x1, cả ba từ
+`main_11x11` (bỏ lỡ nước thắng win_in_3 đã được AB_FULL xác nhận). AB-fail: cả ba có `ab_plain` (depth 4 không ordering; ván
+`9x5|t0.5`, `9x5|t0.1`, `7x4|n10000`), phù hợp phát hiện dưới đây rằng không có ca nào của AB có ordering. Phần còn lại của mục là phân tích trước chunk 7-10.
 
 * **MCTS-miss: 3 ví dụ** (đã đủ giới hạn 3; tần suất thực: mẫu ngẫu nhiên 400 trong 24.699 ván MCTS thua cho 26 ca,
   ≈ 6,5 %, nên dữ liệu rất dồi dào).
@@ -225,12 +244,167 @@ hai ván, nhiễu này nằm trong CI đã báo.
 
 ## 7. Giới hạn bổ sung (đưa vào báo cáo)
 
-1. Ô 9x9@0.1 vi phạm budget (mục 2); Elo ở ô này chỉ mang tính tham khảo.
-2. `budget_modes` hiện từ dữ liệu quick, sẽ thay sau chunk 9.
+1. Ô 9x9@0.1 vi phạm budget (mục 2, 8); Elo ở ô này chỉ mang tính tham khảo. (Bản chốt đầy đủ ở mục 12.)
+2. (Đã giải quyết) `budget_modes` đã sinh từ dữ liệu FULL.
 3. Mọi AB đều giới hạn depth 4 (trừ `ab_full_timed`) và hết giờ phần lớn nước ở 9x9 (mục 4.2); kết luận về ID/TT/radius là về
    sức mạnh trong khung này.
 4. So sánh nhiều cặp không hiệu chỉnh (Bonferroni); các "kết luận được" sát biên (CI chạm 0,5) nên đọc là gợi ý.
 5. CI Elo neo Random bảo thủ; xem quy ước ở đầu file.
+
+## 8. Đối chứng ô 9x9@0,1 s: 10 worker vs 6 worker
+
+Cùng config, cùng seed và cùng 12.000 `game_id` (cùng thế khai cuộc); chỉ khác `--workers` (10 vs 6). Nguồn: `results/main_9x9/full/summary.csv`
+(ô 0,1 s) và `results/main_9x9/full_w6_0.1/summary.csv`; violation tính lại từ `wall_s` từng nước.
+
+* **Kendall tau Elo (16 agent) = 0,933**; bỏ Random 0,924; tau theo điểm số 0,933. Tức 4/120 cặp agent đảo thứ tự, đều là các cặp sát nhau (4 biến thể AB có order, MCTS lân cận).
+* **Không agent nào có CI Elo tách biệt** (0/16). Chênh Elo (w6 - w10): AB có order -52...-65; MCTS +42...+70 (riêng `mcts_eval_tac` -16, `mcts_eval` -29);
+  `backtracking_d2` +2; `ab_plain` +40. Trung bình |dElo| = 48, khoảng 1/3 nửa bề rộng CI (~±130). Ở mức cặp: 1/120 cặp có CI Wilson điểm số tách biệt (ngẫu nhiên kỳ vọng ≈ 6 ở mức 5 %).
+* **Vi phạm budget (> 1,5x)**: tổng 3,05 % (10 worker) → 2,09 % (6 worker); số agent ≥ 1 %: 13 → 8.
+
+| agent | Elo w10 [CI] | Elo w6 [CI] | vi phạm % w10 | vi phạm % w6 |
+|---|---|---|---|---|
+| ab_order_id_tt | 2659 [2539, 2801] | 2594 [2456, 2791] | 1,17 | 0,16 |
+| ab_full | 2651 [2538, 2784] | 2597 [2463, 2780] | 1,57 | 0,02 |
+| ab_order | 2650 [2537, 2788] | 2592 [2451, 2791] | 2,11 | 0,00 |
+| ab_full_timed | 2648 [2533, 2775] | 2596 [2448, 2782] | 1,16 | 0,02 |
+| mcts_eval_tac | 1638 [1524, 1773] | 1622 [1507, 1777] | 2,93 | 1,20 |
+| mcts_eval | 1527 [1416, 1670] | 1498 [1386, 1652] | 2,36 | 0,29 |
+| mcts_rave_tac | 1376 [1255, 1512] | 1439 [1325, 1593] | 6,35 | 5,90 |
+| mcts_heuristic_tac | 1255 [1137, 1401] | 1324 [1208, 1478] | 6,43 | 6,20 |
+| mcts_rave | 1190 [1085, 1317] | 1236 [1118, 1389] | 5,38 | 5,00 |
+| mcts_ab_tac | 1071 [968, 1205] | 1113 [997, 1274] | 6,79 | 5,26 |
+| backtracking_d2 | 1002 [893, 1141] | 1005 [887, 1162] | 0,02 | 0,00 |
+| mcts_heuristic | 999 [886, 1142] | 1058 [932, 1217] | 4,80 | 5,09 |
+| mcts_random | 952 [838, 1078] | 998 [881, 1152] | 1,81 | 1,09 |
+| mcts_ab | 877 [782, 1024] | 946 [835, 1099] | 5,96 | 2,98 |
+| ab_plain | 321 [246, 420] | 361 [282, 498] | 0,08 | 0,06 |
+| random | 0 [0, 0] | 0 [0, 0] | 0,00 | 0,00 |
+
+**Kết luận.** (1) Giả thuyết "lập lịch 10 worker" **đúng một phần**: với AB, vi phạm gần như biến mất khi giảm tải (1,2-2,1 % → ≤ 0,16 %) và Elo của AB giảm ~55 (ít được "tặng" thêm thời gian);
+với các MCTS dùng rollout nặng (rave, heuristic, TAC, `mcts_ab*`) vi phạm **vẫn 5-6 %**, nên phần lớn là do độ thô của việc kiểm tra đồng hồ trong MCTS chứ không phải tải máy.
+(2) **Dữ liệu 10 worker dùng được, không cần thay bằng 6 worker**: thứ hạng và mọi kết luận ở mục 4 và 10 không đổi (tau 0,93, 0 agent tách CI), và giữ 10 worker làm bản chính giúp ô 0,1 s cùng chế độ tải với ô 0,5 s và 1 s.
+Bản 6 worker giữ làm bản lặp độc lập (cùng kết luận). (3) Không được khẳng định tuân thủ budget ở 0,1 s với bất kỳ bản nào (8-13 agent vẫn ≥ 1 %); báo cáo ghi nhãn budget-noisy kèm hai con số trên.
+Khoảng cách AB-MCTS ở 0,1 s: +1.021 [+991, +1.051] (10 worker) và +975 [+881, +1.051] (6 worker).
+
+## 9. So sánh bổ sung
+
+### 9.1 11x11 (k=5, 0,5 s, 100 ván/cặp, 9 agent; Random = 0)
+
+Nguồn: `results/main_11x11/full/summary.csv`. Roster rút gọn (9/16 agent), nên Elo 11x11 **không so tuyệt đối** với 7x7/9x9.
+
+| agent | Elo [95 % CI] (score) |
+|---|---|
+| ab_order_id_tt | 2225 [2078, 2641] (0,95) |
+| ab_full | 2157 [2015, 2570] (0,92) |
+| mcts_eval_tac | 1545 [1403, 1928] (0,69) |
+| mcts_eval | 1464 [1333, 1840] (0,65) |
+| mcts_heuristic_tac | 1175 [1049, 1551] (0,49) |
+| mcts_ab_tac | 914 [803, 1297] (0,33) |
+| mcts_random | 830 [709, 1199] (0,28) |
+| backtracking_d2 | 686 [562, 1065] (0,20) |
+| random | 0 [0, 0] (0,00) |
+
+### 9.2 Khoảng cách AB tốt nhất - MCTS tốt nhất (@0,5 s trừ khi ghi khác)
+
+Khoảng cách Elo lấy từ **cùng một mẫu bootstrap** (300 lần lấy lại ván, seed 1), nên CI của hiệu hẹp hơn việc đặt hai CI Elo cạnh nhau (vốn chồng lấn vì dùng chung neo Random).
+Agent tốt nhất chọn theo ước lượng điểm.
+
+| bàn @ budget | AB tốt nhất | MCTS tốt nhất | khoảng cách Elo [CI] | đối đầu trực tiếp (điểm AB [Wilson]) |
+|---|---|---|---|---|
+| 7x7 k=4 @0,5 | ab_order 1742 | mcts_eval_tac 1646 | **+97 [+50, +139]** | 0,65 [0,50, 0,78] (n=40; chứa 0,5) |
+| 9x9 k=5 @0,5 | ab_order 2376 | mcts_eval_tac 1908 | **+468 [+414, +516]** | 0,94 [0,88, 0,97] (n=100) |
+| 11x11 k=5 @0,5 | ab_order_id_tt 2225 | mcts_eval_tac 1545 | **+680 [+595, +832]** | 0,97 [0,92, 0,99] (n=100) |
+| 9x9 @0,1 (10 w) | ab_order_id_tt 2659 | mcts_eval_tac 1638 | +1.021 [+991, +1.051] | 1,00 [0,96, 1,00] |
+| 9x9 @0,1 (6 w) | ab_full 2597 | mcts_eval_tac 1622 | +975 [+881, +1.051] | 1,00 [0,96, 1,00] |
+| 9x9 @1,0 | ab_order 2182 | mcts_eval_tac 1850 | +332 [+297, +370] | 0,92 [0,85, 0,96] |
+
+Khoảng cách tăng theo kích thước bàn: 7x7 → 9x9 và 9x9 → 11x11 đều **CI tách biệt** (so khác bàn/roster chỉ mang tính định hướng: Elo mỗi bàn neo riêng và roster 11x11 nhỏ hơn).
+Khoảng cách giảm theo budget ở 9x9 (+468 → +332 giữa 0,5 s và 1,0 s: CI tách; 0,1 s bị nhiễu budget).
+
+### 9.3 Time-budget vs nodes-budget (Kendall tau trên Elo, các agent chung; bootstrap 100 lần cho cả hai phía)
+
+`mcts_ab`, `mcts_ab_tac` không có trong nodes_budget nên so 14 agent. Nguồn: `main_7x7/full`, `main_9x9/full` (0,5 s) với `nodes_budget/full`.
+
+| cặp so sánh | ván (time / nodes) | tau [CI 95 %] | tau bỏ Random |
+|---|---|---|---|
+| 7x4 (7x7 k=4): 0,5 s vs 2000 | 4.800 / 9.100 | 0,835 [0,76, 0,91] | 0,808 |
+| 7x4: 0,5 s vs 10000 | 4.800 / 9.100 | 0,813 [0,67, 0,90] | 0,782 |
+| 9x5 (9x9 k=5): 0,5 s vs 2000 | 12.000 / 9.100 | 0,879 [0,82, 0,93] | 0,859 |
+
+Cấu trúc giống hệt ở cả 3 cặp: {4 AB có order} > {MCTS} > `backtracking_d2` > `ab_plain` > Random; mọi bất đồng thứ hạng nằm **trong** nhóm AB (4 biến thể cách nhau < 40 Elo) hoặc trong nhóm MCTS.
+Mốc nhiễu để đọc tau: hai lần chạy cùng budget (10 vs 6 worker) cũng chỉ đạt 0,93. Khác biệt đáng chú ý: ở nodes@10000 (7x4) khoảng cách AB-MCTS giữ ~100-110 Elo (time: 97) và các MCTS TAC/rave/heuristic gần như ngang nhau (1.805-1.819);
+ở 9x5 `backtracking_d2` thấp hơn nhiều ở node budget (611 so với 1.041 ở time budget) — chưa tìm nguyên nhân, ghi nhận như khác biệt giữa hai chế độ đo. **Kết luận: nhất quán** về thứ tự nhóm; kết luận không phụ thuộc vào nhiễu tải/CPU của phép đo thời gian.
+
+## 10. Findings cuối cùng
+
+Quy ước mức chắc chắn: **tách biệt** = CI (Elo của hiệu, hoặc Wilson của đối đầu) loại trừ 0 / 0,5; **chồng lấn** = không loại trừ.
+
+1. **Alpha-beta có sắp xếp nước đi thắng MCTS tốt nhất ở mọi bàn, và khoảng cách tăng theo kích thước bàn.** Hiệu Elo AB - MCTS: +97 [+50, +139] (7x7), +468 [+414, +516] (9x9), +680 [+595, +832] (11x11, roster rút gọn);
+   đối đầu 0,65 [0,50, 0,78] / 0,94 [0,88, 0,97] / 0,97 [0,92, 0,99]. Mức chắc chắn: 9x9 và 11x11 **tách biệt**; ở 7x7 hiệu Elo tách khỏi 0 nhưng đối đầu trực tiếp (40 ván) **chồng lấn** (chứa 0,5).
+   Nguồn: `main_7x7`, `main_9x9`, `main_11x11` `/full/summary.csv`; mục 9.2.
+2. **Move ordering là thành phần duy nhất của alpha-beta có tác dụng đo được lên sức mạnh.** `ab_order` vs `ab_plain` = 1,00 [0,96, 1,00] ở cả 3 budget 9x9 (1,00 [0,91, 1,00] ở ablation); số nút depth 4 giảm 63 lần (1.064.799 → 16.900).
+   Iterative deepening, bảng chuyển vị, radius 2 + killer, depth 10 vs 4: **chồng lấn** (mọi CI chứa 0,5; ví dụ ID+TT vs ab_order 0,51 / 0,47 / 0,46). Nguồn: `ablation_ab/full`, `main_9x9/full`; mục 4.2.
+3. **Lợi thế của AB thu hẹp khi budget tăng (9x9).** Hiệu Elo +468 [+414, +516] (0,5 s) → +332 [+297, +370] (1,0 s): **tách biệt**. Điểm ab_order vs mcts_eval_tac 0,94 → 0,92: **chồng lấn** (chỉ 0,1 s [0,96, 1,00] tách khỏi 1,0 s [0,85, 0,96]).
+   Ô 0,1 s bị nhiễu budget nên không dùng làm điểm xu hướng độc lập. Nguồn: `main_9x9/full/summary.csv`; mục 4.1, 8, 9.2.
+4. **Các kết luận không phụ thuộc vào cách đo budget.** Thứ hạng theo thời gian và theo node nhất quán (Kendall tau 0,81-0,88, CI trong [0,67, 0,93], so với mốc nhiễu 0,93 giữa hai lần chạy cùng cấu hình);
+   cấu trúc nhóm AB > MCTS > backtracking > ab_plain > Random giống hệt; bất đồng chỉ nằm trong từng nhóm (CI Elo **chồng lấn** ở đó). Nguồn: `nodes_budget/full`, `main_7x7/full`, `main_9x9/full`; mục 9.3, hình `budget_modes`.
+5. **TAC giúp MCTS ổn định, còn RAVE phụ thuộc bàn.** TAC: `mcts_heuristic_tac` vs `mcts_heuristic` 0,85 [0,71, 0,93] (ablation) và 0,88 / 0,86 / 0,82 (9x9, 100 ván/ô); đều **tách biệt**; mọi MCTS TAC giải 30/30 puzzle, không-TAC 0,83-0,87.
+   RAVE: 0,72 ở 9x9 (tách) nhưng 0,325 [0,20, 0,48] ở 7x7 (**tách**, chiều ngược) nên là đặc trưng bàn. CI Elo của cả 10 biến thể ablation **chồng lấn**, nên các kết luận này dựa trên đối đầu trực tiếp. Nguồn: `ablation_mcts/full`, `main_7x7/full`, `main_9x9/full`; mục 4.3.
+
+## 11. Figure và bảng sẽ dùng trong báo cáo
+
+Tất cả được sinh lại ngày 01/11 từ thư mục `full` (`experiments.plots`, `experiments.tables`, log `results/logs/postprocess.log`); không còn figure/bảng nào dùng quick/pilot.
+Đã kiểm: sinh lại từ bản sao chỉ chứa `.jsonl.gz` cho **bảng .tex và PNG trùng byte (sha256)** với bản trong `results/`.
+
+| đường dẫn | nội dung | dữ liệu / số ván |
+|---|---|---|
+| `results/figures/elo_vs_budget.{png,pdf}` | Elo từng agent theo budget, 3 panel 7x7 / 9x9 / 11x11 | main_7x7 4.800 + main_9x9 36.000 + main_11x11 3.600 = 44.400 ván |
+| `results/figures/h2h_heatmap.{png,pdf}` | ma trận điểm đối đầu 7x7 | main_7x7: 4.800 ván |
+| `results/figures/scaling_winrate.{png,pdf}` | AB vs MCTS theo kích thước bàn (7x4, 9x5, 11x5) | scaling: 720 ván (240/bàn) |
+| `results/figures/ablation_ab.{png,pdf}` | ablation alpha-beta 9x5@0,5 s | ablation_ab: 840 ván |
+| `results/figures/ablation_mcts.{png,pdf}` | ablation MCTS 9x5@0,5 s | ablation_mcts: 1.800 ván |
+| `results/figures/nodes_vs_depth.{png,pdf}` | số nút theo depth, các cấu hình AB | `ablation_ab/full/nodes_vs_depth.csv` (đếm tất định, không phải ván) |
+| `results/figures/puzzle_accuracy.{png,pdf}` | độ chính xác 30 puzzle x 16 agent | `main_9x9/full/puzzles.csv` (không phải ván) |
+| `results/figures/budget_modes.{png,pdf}` | thứ hạng time@0,5 s vs nodes@10000 (7x7 k=4), Spearman rho 0,94 | main_7x7 4.800 + nodes_budget 7x4@10000 9.100 ván |
+| `results/figures/nps_hist_9x9_0.5.{png,pdf}` | histogram nodes/s, 3 nước đầu, 3 agent | main_9x9 @0,5 s (12.000 ván). **Không có script sinh trong repo** (vẽ ad hoc 29/10 từ dữ liệu FULL); nếu dùng cần ghi rõ hoặc bổ sung script |
+| `results/tables/elo_ranking.tex` | Elo + CI: 7x7@0,5 (600 ván/agent), 9x9@1,0 (1.500/agent), 11x11@0,5 (800/agent) | main_* summary |
+| `results/tables/ab_ablation.tex` | ablation AB | ablation_ab: 840 ván |
+| `results/tables/mcts_ablation.tex` | ablation MCTS | ablation_mcts: 1.800 ván |
+| `results/tables/puzzle_accuracy.tex` | puzzle 30 thế | main_9x9 puzzles.csv |
+| `results/tables/solve.tex` | kích thước cây / giá trị bài toán nhỏ (backtracking) | `results/solve.csv` (19/10; không phải thực nghiệm đối kháng) |
+| `results/failure_cases.md` | 3 MCTS-miss + 3 AB-fail có bàn cờ | quét 75.300 ván FULL |
+
+Không có figure riêng cho đối chứng 10 vs 6 worker và cho tau time-vs-nodes (chỉ có bảng ở mục 8, 9.3).
+
+## 12. Limitations (bản chốt)
+
+1. **Ô 9x9@0,1 s là budget-noisy.** 13/16 agent (10 worker) và 8/16 agent (6 worker) vượt 1 % số nước > 1,5x budget; vượt là tuyệt đối (~+50-60 ms ở đuôi). Đối chứng (mục 8): thứ hạng không đổi
+   (tau 0,93, 0/16 agent tách CI) nhưng vi phạm của AB gần hết khi giảm tải còn của MCTS (5-6 %) thì không, nên nguyên nhân gồm cả lập lịch lẫn độ thô đồng hồ MCTS.
+   Không dùng ô này để khẳng định tuân thủ budget. Các ô 0,5 s, 1 s, 11x11@0,5 đạt (< 1 %).
+2. **Sự cố vận hành (dữ liệu không bị ảnh hưởng; đã kiểm toàn vẹn).**
+   * *Pool treo ở chunk 9* (nodes_budget 7x4): START 29/10 14:37:06, không có dòng END; log chunk 9 chứa loạt `KeyboardInterrupt` của các `SpawnPoolWorker` (dừng tay), và chú thích trong `scripts/run_remaining.ps1`
+     ghi pool treo ≈ 3,3 h mà không ai biết. **Thời điểm treo chính xác không được ghi lại** (games.jsonl không có timestamp từng ván). Khi resume 31/10 17:48 còn thiếu 10/18.200 ván (18.190 đã có), chạy bù 10 ván.
+   * *Watchdog* (`StallMinutes = 20`, tự kill khi games file không lớn) được thêm sau sự cố này; **không kích hoạt lần nào** (không có dòng `WATCHDOG` trong `progress.txt`).
+   * *Chunk 11* (bản lặp 6 worker): lần khởi động nhầm 31/10 16:30:39 (do `-DryRun` hỏng, đã ghi trong `progress.txt`) bị dừng tay ~16:40 sau **2.821 ván**; resume 16:59:45 chạy nốt 9.179 ván, xong 17:47:58. Tổng 12.000 ván, không trùng id.
+   * *Chunk 10* (nodes_budget 9x5@2000): lần 1 kết thúc bất thường 19:11:27 (exit 1073807364) sau ~81 phút; lần 2 và bước post-processing chết ngay (exit -1073741205), tức tiến trình bị ngắt chứ không phải lỗi dữ liệu;
+     chạy lại 01/11 00:08-01:43, chạy nốt 3.547 ván còn thiếu (5.553 ván đã có). Đây là sự cố ngoài danh sách ban đầu; nguyên nhân gốc chưa xác định.
+3. **Toàn vẹn** (mục 1): không có `game_id` trùng trong từng run, cùng config với `experiments/configs/*.yaml`; riêng `main_9x9/full` và `full_w6_0.1` trùng 12.000 id có chủ đích (bản lặp), không bao giờ gộp.
+4. **CPU lai** (Intel Core Ultra, 22 luồng, P/E-core), không ghim affinity: thông lượng trong cùng một thế thay đổi tới ~2-3x (mục 6); nhiễu này nằm trong CI đã báo. Chỉ có dữ liệu từ một máy.
+5. **`--workers 10` cố định** cho mọi run chính (chunk 11 dùng 6 làm đối chứng); không quét theo số worker nên ảnh hưởng của số worker chỉ được định lượng bằng đối chứng 10 vs 6 ở ô 0,1 s (mục 8).
+6. **Roster khác nhau giữa các ô**: 11x11 chỉ 9/16 agent; nodes_budget 14/16 (không `mcts_ab`, `mcts_ab_tac`); 9x5@10000 nodes bỏ (`skip_cells`). Elo neo Random theo từng ô nên không so tuyệt đối giữa bàn/budget/roster.
+7. So sánh nhiều cặp không hiệu chỉnh Bonferroni; các kết luận sát biên (CI chạm 0,5, ví dụ 7x7) đọc là gợi ý. Mọi AB giới hạn depth 4 (trừ `ab_full_timed`) và hết giờ phần lớn nước ở 9x9 (mục 4.2).
+8. Failure cases: AB-fail chỉ gặp với `ab_plain` (không có ca nào của AB có ordering trong 75.300 ván); cả 3 ví dụ MCTS-miss đến từ 11x11.
+
+## 13. Nén dữ liệu và đóng gói
+
+* Nén (`scripts/compress_jsonl.py`, ngưỡng 20 MB, gzip tất định): `main_9x9/full` 123,9 → 22,9 MB; `main_9x9/full_w6_0.1` 47,7 → 8,6 MB; `nodes_budget/full` 65,9 → 11,2 MB.
+  Ba file `.gz` giải nén **trùng byte** với `games.jsonl` (sha256). File `.jsonl` gốc bị `.gitignore` (chỉ `.gz` được commit và đóng gói). Vì `.gitignore` loại mọi `games.jsonl` trong `full*`, các file < 20 MB (ablation_ab, ablation_mcts, scaling, main_7x7, main_11x11, failure_mining) cũng được nén (`--min-mb 0`) để dữ liệu chốt nằm trong git; cả 9 `.gz` trùng byte với bản gốc.
+* **Checksum `summary.csv`**: dựng lại từ chính các `.gz` (`summarise` của `experiments.run`, bootstrap seed 0) cho ba run trên, **trùng byte** với `summary.csv` đã lưu
+  (sha256 `4658167258108f14…`, `3f755f4df2a3ecac…`, `ae0e0fbed06d28a7…`).
+  Sinh lại bảng và figure từ bản sao `results/` chỉ có `.gz`: 5/5 bảng `.tex` và 8/8 PNG trùng byte.
+* `scripts/make_submission.py` (tên thử `FINALCHECK`): 187 file, **zip 52,5 MB** (nội dung 88,2 MB); giải nén vào thư mục tạm, venv sạch, `pip install -r requirements.txt`,
+  `pytest -m "not slow"`: 222 passed, "verification: OK". Zip thử nằm ngoài repo; tên nhóm thật cần truyền lại bằng `--name`.
+* Toàn bộ test (kể cả slow): 256 passed; `mypy --strict core agents`: không lỗi.
 
 ---
 

@@ -1,0 +1,1 @@
+2026-10-29T14:02:37 D:\HCMUT\Năm 4\NMAI\HW2_NMAI_Topic1\experiments\run.py --config experiments/configs/main_11x11.yaml --run-dir results/main_11x11/full --only 11x5@0.5 --workers 10

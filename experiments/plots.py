@@ -299,10 +299,23 @@ def plot_h2h_heatmap(runs: dict[str, Path], out_dir: Path) -> list[Path]:
     return _save(fig, "h2h_heatmap", out_dir)
 
 
+def _average_ranks(v: list[float]) -> NDArray[np.float64]:
+    a = np.asarray(v, dtype=float)
+    order = np.argsort(a, kind="stable")
+    ranks = np.empty(len(a))
+    i = 0
+    while i < len(a):
+        j = i
+        while j + 1 < len(a) and a[order[j + 1]] == a[order[i]]:
+            j += 1
+        ranks[order[i:j + 1]] = (i + j) / 2.0
+        i = j + 1
+    return ranks
+
+
 def spearman(a: list[float], b: list[float]) -> float:
-    """Spearman rank correlation (no tie correction needed for the use here)."""
-    ra = np.argsort(np.argsort(a)).astype(float)
-    rb = np.argsort(np.argsort(b)).astype(float)
+    """Spearman rank correlation (average ranks for ties, so the result does not depend on input order)."""
+    ra, rb = _average_ranks(a), _average_ranks(b)
     if ra.std() == 0 or rb.std() == 0:
         return float("nan")
     return float(np.corrcoef(ra, rb)[0, 1])
@@ -323,7 +336,7 @@ def plot_budget_modes(runs: dict[str, Path], out_dir: Path) -> list[Path]:
                 for r in sub if float(r["budget"]) == b}
 
     t, nd = pick(t_rows), pick(n_rows)
-    common = sorted(set(t) & set(nd), key=lambda a: -t[a][0])
+    common = sorted(set(t) & set(nd), key=lambda a: (-t[a][0], a))
     rho = spearman([t[a][0] for a in common], [nd[a][0] for a in common])
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.4), sharey=True)
     for ax, data, title in ((axes[0], t, "time budget"), (axes[1], nd, "node budget")):

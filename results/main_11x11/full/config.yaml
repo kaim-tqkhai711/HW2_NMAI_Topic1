@@ -1,0 +1,20 @@
+name: main_11x11
+seed: 20260312
+boards:
+- - 11
+  - 5
+budget_mode: time
+budgets:
+- 0.5
+games_per_pair: 100
+anchor: random
+agents:
+- random
+- backtracking_d2
+- ab_order_id_tt
+- ab_full
+- mcts_random
+- mcts_eval
+- mcts_eval_tac
+- mcts_heuristic_tac
+- mcts_ab_tac

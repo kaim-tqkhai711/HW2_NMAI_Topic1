@@ -1,0 +1,30 @@
+name: nodes_budget
+seed: 20260305
+boards:
+- - 7
+  - 4
+- - 9
+  - 5
+budget_mode: nodes
+budgets:
+- 2000
+- 10000
+skip_cells:
+- 9x5@10000
+games_per_pair: 100
+anchor: random
+agents:
+- random
+- backtracking_d2
+- ab_plain
+- ab_order
+- ab_order_id_tt
+- ab_full
+- ab_full_timed
+- mcts_random
+- mcts_heuristic
+- mcts_rave
+- mcts_eval
+- mcts_heuristic_tac
+- mcts_rave_tac
+- mcts_eval_tac

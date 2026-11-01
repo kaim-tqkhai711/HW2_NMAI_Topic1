@@ -1,0 +1,3 @@
+[main_11x11] 3600 games in 1 cell(s) (11x5@0.5), rough estimate ~102.7 min on 10 workers
+  11x11 k=5 budget=0.5 (time) part 1/1
+[main_11x11] done -> results\main_11x11\full

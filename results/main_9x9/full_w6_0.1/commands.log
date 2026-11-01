@@ -1,0 +1,3 @@
+2026-10-31T16:30:39 D:\HCMUT\Năm 4\NMAI\HW2_NMAI_Topic1\experiments\run.py --config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full_w6_0.1 --only 9x5@0.1 --workers 6
+2026-10-31T16:59:45 D:\HCMUT\Năm 4\NMAI\HW2_NMAI_Topic1\experiments\run.py --config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full_w6_0.1 --only 9x5@0.1 --workers 6
+2026-11-01T00:08:35 D:\HCMUT\Năm 4\NMAI\HW2_NMAI_Topic1\experiments\run.py --config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full_w6_0.1 --only 9x5@0.1 --workers 6

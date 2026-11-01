@@ -1,0 +1,8 @@
+[main_9x9] 12000 games in 1 cell(s) (9x5@0.1), rough estimate ~98.4 min on 6 workers
+  9x9 k=5 budget=0.1 (time) part 1/1
+[main_9x9] 12000 games in 1 cell(s) (9x5@0.1), rough estimate ~98.4 min on 6 workers
+  9x9 k=5 budget=0.1 (time) part 1/1
+[main_9x9] done -> results\main_9x9\full_w6_0.1
+[main_9x9] 12000 games in 1 cell(s) (9x5@0.1), rough estimate ~98.4 min on 6 workers
+  9x9 k=5 budget=0.1 (time) part 1/1
+[main_9x9] done -> results\main_9x9\full_w6_0.1

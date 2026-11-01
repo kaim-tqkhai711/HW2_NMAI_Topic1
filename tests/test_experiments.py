@@ -259,3 +259,13 @@ def test_chunked_run_equals_unchunked_run(tmp_path: Path) -> None:
     assert {int(r["n"]) for r in rows} == {4, 5} and sum(int(r["games"]) for r in rows) == 48
     assert (chunk / "commands.log").read_text().count("\n") == 4
     assert not (chunk / "puzzles.csv").exists()
+
+
+def test_spearman_ties_use_average_ranks() -> None:
+    from math import isclose, sqrt
+
+    from experiments.plots import spearman
+
+    # hand computation: ranks [0, 1.5, 1.5, 3] vs [0, 1, 2, 3] -> 4.5 / sqrt(4.5 * 5)
+    assert isclose(spearman([1, 2, 2, 4], [1, 2, 3, 4]), 4.5 / sqrt(22.5))
+    assert isclose(spearman([1, 2, 3], [3, 2, 1]), -1.0)
