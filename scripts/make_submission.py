@@ -82,7 +82,7 @@ def omitted_note(root: Path, names: list[Path]) -> str:
         "# Data left out of this lite archive", "",
         "The full game records are not in this archive. Download them from [TODO: link Drive/GitHub Release]",
         "and unpack each file to the same path (keep the `.gz`; every loader reads it directly). Then",
-        "`python -m experiments.plots && python -m experiments.tables && python -m experiments.failure_cases`",
+        "`python -m experiments.plots && python -m experiments.tables && python -m experiments.failure_cases && python -m experiments.nps_hist`",
         "regenerate every figure and table; `summary.csv` can be",
         "rebuilt with `experiments.run.write_summary` (see README, section Reproducibility).", "",
         "| file | size (bytes) | sha256 |", "|---|---|---|"]
