@@ -18,7 +18,7 @@ $Chunks = @(
     @{ N = 5; Name = "main_9x9 0.1+0.5"; Args = "--config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full --only 9x5@0.1 9x5@0.5" },
     @{ N = 6; Name = "main_9x9 1.0";  Args = "--config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full --only 9x5@1 --extras" }
 )
-$Post = @("experiments.plots", "experiments.tables", "experiments.failure_cases", "experiments.nps_hist")
+$Post = @("experiments.plots", "experiments.tables", "experiments.failure_cases", "experiments.nps_hist", "experiments.plot_growth")
 
 function Append-SharedLine([string]$Path, [string]$Line) {
     # FileShare.ReadWrite: a reader such as `Get-Content -Wait` must not block the log; retry, never abort the run
