@@ -386,8 +386,12 @@ Không có figure riêng cho đối chứng 10 vs 6 worker và cho tau time-vs-n
      ghi pool treo ≈ 3,3 h mà không ai biết. **Thời điểm treo chính xác không được ghi lại** (games.jsonl không có timestamp từng ván). Khi resume 31/10 17:48 còn thiếu 10/18.200 ván (18.190 đã có), chạy bù 10 ván.
    * *Watchdog* (`StallMinutes = 20`, tự kill khi games file không lớn) được thêm sau sự cố này; **không kích hoạt lần nào** (không có dòng `WATCHDOG` trong `progress.txt`).
    * *Chunk 11* (bản lặp 6 worker): lần khởi động nhầm 31/10 16:30:39 (do `-DryRun` hỏng, đã ghi trong `progress.txt`) bị dừng tay ~16:40 sau **2.821 ván**; resume 16:59:45 chạy nốt 9.179 ván, xong 17:47:58. Tổng 12.000 ván, không trùng id.
-   * *Chunk 10* (nodes_budget 9x5@2000): lần 1 kết thúc bất thường 19:11:27 (exit 1073807364) sau ~81 phút; lần 2 và bước post-processing chết ngay (exit -1073741205), tức tiến trình bị ngắt chứ không phải lỗi dữ liệu;
-     chạy lại 01/11 00:08-01:43, chạy nốt 3.547 ván còn thiếu (5.553 ván đã có). Đây là sự cố ngoài danh sách ban đầu; nguyên nhân gốc chưa xác định.
+   * *Chunk 10* (nodes_budget 9x5@2000, 9.100 ván, bắt đầu từ 0 ván):
+     lần 1 START 31/10 17:49:38, kết thúc bất thường **19:11:27** (exit 1073807364) sau ~82 phút, để lại 5.553 ván; lần 2 và ba bước post-processing cùng chết ngay trong giây đó
+     (exit -1073741205), tức tiến trình/phiên bị ngắt chứ không phải lỗi dữ liệu; `progress.txt` ghi "FAILED after retry"; nguyên nhân gốc chưa xác định (watchdog không kích hoạt).
+     Chạy lại 01/11 00:11:03 (script ước tính còn 3.547/9.100 ván), xong **01:43:12** (~92 phút): **3.547 ván chạy bù**, cộng 5.553 ván cũ = 9.100.
+     Xác nhận sau khi chạy bù (đọc lại `games.jsonl.gz`): 9.100 ván 9x5@2000, **9.100 `game_id` khác nhau (không trùng)**, đủ 91 cặp x đúng 100 ván; hai lần chạy ghi trong `commands.log` (31/10 17:49:39 và 01/11 00:11:04) dùng cùng lệnh/config `nodes_budget.yaml` (lần 2 chết ngay không ghi gì).
+     Resume dựa trên `game_id` đã hoàn tất, dòng cuối bị cắt dở (nếu có) được loại trước khi chạy tiếp, nên không ván nào bị ghi hai lần.
 3. **Toàn vẹn** (mục 1): không có `game_id` trùng trong từng run, cùng config với `experiments/configs/*.yaml`; riêng `main_9x9/full` và `full_w6_0.1` trùng 12.000 id có chủ đích (bản lặp), không bao giờ gộp.
 4. **CPU lai** (Intel Core Ultra, 22 luồng, P/E-core), không ghim affinity: thông lượng trong cùng một thế thay đổi tới ~2-3x (mục 6); nhiễu này nằm trong CI đã báo. Chỉ có dữ liệu từ một máy.
 5. **`--workers 10` cố định** cho mọi run chính (chunk 11 dùng 6 làm đối chứng); không quét theo số worker nên ảnh hưởng của số worker chỉ được định lượng bằng đối chứng 10 vs 6 ở ô 0,1 s (mục 8).
