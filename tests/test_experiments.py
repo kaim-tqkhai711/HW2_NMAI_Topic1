@@ -269,3 +269,20 @@ def test_spearman_ties_use_average_ranks() -> None:
     # hand computation: ranks [0, 1.5, 1.5, 3] vs [0, 1, 2, 3] -> 4.5 / sqrt(4.5 * 5)
     assert isclose(spearman([1, 2, 2, 4], [1, 2, 3, 4]), 4.5 / sqrt(22.5))
     assert isclose(spearman([1, 2, 3], [3, 2, 1]), -1.0)
+
+
+def test_nps_hist_counts_only_each_agents_first_three_long_moves() -> None:
+    from eval.tournament import GameRecord, MoveRecord
+    from experiments.nps_hist import collect
+
+    def mv(wall: float, nps: float) -> MoveRecord:
+        return MoveRecord(move=[0, 0], nodes=1, stat_time_s=wall, wall_s=wall, nodes_per_s=nps, depth=None)
+
+    # one opening stone, so O ("b") moves first: b = indices 0,2,4,6 ; a = indices 1,3,5,7.
+    walls = [0.5, 0.3, 0.5, 0.1, 0.5, 0.4, 0.5, 0.9]
+    moves = [mv(w, 100.0 + i) for i, w in enumerate(walls)]
+    rec = GameRecord("g", {"n": 9, "k": 5, "exact_k": False}, "a", "b", 1, [[0, 0]], moves, 1, 3.0, 0, 0.5)
+    other = GameRecord("h", {"n": 9, "k": 5, "exact_k": False}, "a", "b", 1, [[0, 0]], moves, 1, 3.0, 0, 1.0)
+    # a: first three moves are i=1 (0.3 s), i=3 (0.1 s, too short), i=5 (0.4 s); i=7 is the fourth -> ignored
+    assert list(collect([rec, other], "a")) == [101.0, 105.0]
+    assert list(collect([rec], "b")) == [100.0, 102.0, 104.0]

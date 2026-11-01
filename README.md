@@ -116,6 +116,7 @@ python -m experiments.failure_cases   # results/failure_cases.md
 | `tables/elo_ranking.tex`, `puzzle_accuracy.tex` | `main_*` |
 | `tables/ab_ablation.tex`, `mcts_ablation.tex` | `ablation_ab`, `ablation_mcts` |
 | `tables/solve.tex` | `results/solve.csv` |
+| `nps_hist_9x9_0.5` (`python -m experiments.nps_hist`) | `main_9x9` (budget 0.5 s) |
 | `failure_cases.md` | all `games.jsonl` found under `results/` |
 
 ## 7. Submission archive
@@ -145,6 +146,7 @@ into the same paths (keep them as `.jsonl.gz`; all loaders read `.gz` directly),
 python -m experiments.plots
 python -m experiments.tables
 python -m experiments.failure_cases
+python -m experiments.nps_hist
 ```
 
 `summary.csv` of a run can be rebuilt from its games with

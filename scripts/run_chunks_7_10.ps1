@@ -21,7 +21,7 @@ $Chunks = @(
     # replicate of the 0.1 s cell with 6 workers (the 10-worker cell was budget-noisy); separate run dir, nothing overwritten
     @{ N = 11; Name = "main_9x9 0.1 s, 6 workers"; Workers = 6; Args = "--config experiments/configs/main_9x9.yaml --run-dir results/main_9x9/full_w6_0.1 --only 9x5@0.1" }
 )
-$Post = @("experiments.plots", "experiments.tables", "experiments.failure_cases")
+$Post = @("experiments.plots", "experiments.tables", "experiments.failure_cases", "experiments.nps_hist")
 
 function Append-SharedLine([string]$Path, [string]$Line) {
     # FileShare.ReadWrite: a reader such as `Get-Content -Wait` must not block the log; retry, never abort the run

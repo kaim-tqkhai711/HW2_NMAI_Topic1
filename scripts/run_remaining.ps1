@@ -23,7 +23,7 @@ $Chunks = @(
     @{ Label = "C"; N = 10; Name = "nodes_budget 9x5@2000"; Watch = "results/nodes_budget/full/games.jsonl"; Ids = @('{"game_id":"9x5|n2000|')
        Args = "--config experiments/configs/nodes_budget.yaml --run-dir results/nodes_budget/full --only 9x5@2000" }
 )
-$Post = @("experiments.plots", "experiments.tables", "experiments.failure_cases")
+$Post = @("experiments.plots", "experiments.tables", "experiments.failure_cases", "experiments.nps_hist")
 
 function Append-SharedLine([string]$Path, [string]$Line) {
     # FileShare.ReadWrite: a reader such as `Get-Content -Wait` must not block the log; retry, never abort the run

@@ -366,7 +366,7 @@ Tất cả được sinh lại ngày 01/11 từ thư mục `full` (`experiments.
 | `results/figures/nodes_vs_depth.{png,pdf}` | số nút theo depth, các cấu hình AB | `ablation_ab/full/nodes_vs_depth.csv` (đếm tất định, không phải ván) |
 | `results/figures/puzzle_accuracy.{png,pdf}` | độ chính xác 30 puzzle x 16 agent | `main_9x9/full/puzzles.csv` (không phải ván) |
 | `results/figures/budget_modes.{png,pdf}` | thứ hạng time@0,5 s vs nodes@10000 (7x7 k=4), Spearman rho 0,94 | main_7x7 4.800 + nodes_budget 7x4@10000 9.100 ván |
-| `results/figures/nps_hist_9x9_0.5.{png,pdf}` | histogram nodes/s, 3 nước đầu, 3 agent | main_9x9 @0,5 s (12.000 ván). **Không có script sinh trong repo** (vẽ ad hoc 29/10 từ dữ liệu FULL); nếu dùng cần ghi rõ hoặc bổ sung script |
+| `results/figures/nps_hist_9x9_0.5.{png,pdf}` | histogram nodes/s, 3 nước đầu, 3 agent | main_9x9 @0,5 s (12.000 ván). sinh bằng `python -m experiments.nps_hist` (nằm trong post-processing); sinh lại **trùng byte** với PNG cũ (PDF được đặt `CreationDate=None` nên cũng tất định) |
 | `results/tables/elo_ranking.tex` | Elo + CI: 7x7@0,5 (600 ván/agent), 9x9@1,0 (1.500/agent), 11x11@0,5 (800/agent) | main_* summary |
 | `results/tables/ab_ablation.tex` | ablation AB | ablation_ab: 840 ván |
 | `results/tables/mcts_ablation.tex` | ablation MCTS | ablation_mcts: 1.800 ván |
