@@ -127,7 +127,31 @@ python scripts/make_submission.py --name <TEAM>      # builds HW2_<TEAM>.zip, th
 The archive holds the code, tests, docs, README, requirements and the full results (quick-run
 directories named `YYYYMMDD-HHMMSS`, caches and `.git` are excluded). The verification step unpacks it
 into a temporary directory, creates a fresh virtual environment, installs `requirements.txt` and runs
-`pytest -q -m "not slow"`. Use `--no-verify` to skip it.
+`pytest -q -m "not slow"` (and `python -m gui.app --headless-check`). Use `--no-verify` to skip it.
+
+```
+python scripts/make_submission.py --name <TEAM> --lite   # builds HW2_<TEAM>_lite.zip (< 20 MB)
+```
+
+`--lite` leaves out every `games.jsonl[.gz]` larger than 2 MB (the 7x7, 9x9, 9x9 replicate, 11x11 and
+node-budget game records); `summary.csv`, `puzzles.csv`, tables, figures, `failure_cases.md` and the logs stay.
+`results/OMITTED_DATA.md` inside the archive lists what is missing, with sizes and sha256. The full data is at
+**[TODO: link Drive/GitHub Release]**.
+
+**Rebuilding every table and figure from the full data.** Download the files listed in `OMITTED_DATA.md`
+into the same paths (keep them as `.jsonl.gz`; all loaders read `.gz` directly), then run
+
+```
+python -m experiments.plots
+python -m experiments.tables
+python -m experiments.failure_cases
+```
+
+`summary.csv` of a run can be rebuilt from its games with
+`python -c "from pathlib import Path; import yaml; from experiments.run import write_summary; write_summary(Path('results/main_9x9/full'), yaml.safe_load(open('experiments/configs/main_9x9.yaml')))"`.
+Without the large files the same commands still run, but the figures that pool those games
+(for example `elo_vs_budget` reads only `summary.csv`, `h2h_heatmap` reads the 7x7 games that are shipped) are
+then drawn from what is present.
 
 ## 8. Reproducibility
 

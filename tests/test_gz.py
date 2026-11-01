@@ -62,3 +62,22 @@ def test_submission_ships_the_gz_and_not_the_plain_jsonl(tmp_path: Path) -> None
     assert "results/main_9x9/full/games.jsonl.gz" in files
     assert "results/main_9x9/full/games.jsonl" not in files
     assert "results/scaling/full/games.jsonl" in files
+
+
+def test_lite_submission_drops_games_files_over_2mb_and_keeps_the_rest(tmp_path: Path) -> None:
+    big = tmp_path / "results" / "main_9x9" / "full"
+    big.mkdir(parents=True)
+    (big / "games.jsonl.gz").write_bytes(b"x" * (make_submission.LITE_BYTES + 1))
+    (big / "summary.csv").write_text("x\n")
+    small = tmp_path / "results" / "scaling" / "full"
+    small.mkdir(parents=True)
+    (small / "games.jsonl.gz").write_bytes(b"gz")
+    (tmp_path / "results" / "failure_cases.md").write_text("x\n")
+    lite = {p.as_posix() for p in make_submission.collect(tmp_path, lite=True)}
+    full = {p.as_posix() for p in make_submission.collect(tmp_path)}
+    assert "results/main_9x9/full/games.jsonl.gz" in full
+    assert "results/main_9x9/full/games.jsonl.gz" not in lite
+    assert {"results/main_9x9/full/summary.csv", "results/scaling/full/games.jsonl.gz",
+            "results/failure_cases.md"} <= lite
+    assert [p.as_posix() for p in make_submission.omitted(tmp_path)] == ["results/main_9x9/full/games.jsonl.gz"]
+    assert "TODO: link Drive/GitHub Release" in make_submission.omitted_note(tmp_path, make_submission.omitted(tmp_path))
